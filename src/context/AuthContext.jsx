@@ -16,13 +16,25 @@ export const AuthProvider = ({ children }) => {
     // Check active sessions and sets the user
     const checkSession = async () => {
       try {
-        const { data, error } = await supabase.auth.getSession()
+        console.log('Checking for existing session...')
+        const { data: { session }, error } = await supabase.auth.getSession()
         
         if (error) {
           console.error('Error getting session:', error)
           setError(error)
         } else {
-          setUser(data?.session?.user ?? null)
+          console.log('Session check result:', session ? 'Session found' : 'No session')
+          console.log('Session details:', session)
+          
+          if (session?.user) {
+            console.log('User email:', session.user.email)
+            console.log('User ID:', session.user.id)
+            console.log('User metadata:', session.user.user_metadata)
+            console.log('User app metadata:', session.user.app_metadata)
+            setUser(session.user)
+          } else {
+            setUser(null)
+          }
         }
         
         setLoading(false)
@@ -36,9 +48,22 @@ export const AuthProvider = ({ children }) => {
     checkSession()
 
     // Listen for changes on auth state (signed in, signed out, etc.)
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      console.log('Auth state changed:', event, session?.user?.email)
-      setUser(session?.user ?? null)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('Auth state changed:', event)
+      console.log('Session:', session)
+      
+      if (event === 'SIGNED_IN') {
+        console.log('User signed in:', session?.user?.email)
+        // Verify the session is valid
+        const { data: { session: currentSession } } = await supabase.auth.getSession()
+        console.log('Current session after sign in:', currentSession)
+        
+        if (currentSession?.user) {
+          setUser(currentSession.user)
+        }
+      } else if (event === 'SIGNED_OUT') {
+        setUser(null)
+      }
     })
 
     return () => subscription.unsubscribe()
@@ -46,14 +71,15 @@ export const AuthProvider = ({ children }) => {
 
   const signIn = async () => {
     try {
+      console.log('Starting sign in process...')
+      
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/`,
           queryParams: {
             access_type: 'offline',
-            prompt: 'consent',
-          },
+            prompt: 'consent'
+          }
         }
       })
       
@@ -61,6 +87,15 @@ export const AuthProvider = ({ children }) => {
         console.error('Error signing in:', error)
         setError(error)
         return { error }
+      }
+      
+      console.log('Sign in response:', data)
+      
+      // If we have a URL, we need to redirect
+      if (data?.url) {
+        console.log('Redirecting to:', data.url)
+        window.location.href = data.url
+        return { data }
       }
       
       return { data }

@@ -9,11 +9,11 @@ const ProtectedRoute = ({ children }) => {
   useEffect(() => {
     if (!loading && !user) {
       console.log('No user found, redirecting to login')
-      navigate('/login')
+      navigate('/login', { replace: true })
     }
   }, [user, loading, navigate])
 
-  // Show nothing while checking authentication
+  // Show loading state while checking authentication
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">

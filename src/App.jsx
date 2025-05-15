@@ -9,6 +9,7 @@ import { SessionProvider } from './context/SessionContext'
 import { AuthProvider } from './context/AuthContext'
 import SubmissionModal from './components/SubmissionModal'
 import ProtectedRoute from './components/ProtectedRoute'
+import AuthCallback from './pages/AuthCallback'
 
 function App() {
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -19,9 +20,10 @@ function App() {
   return (
     <AuthProvider>
       <SessionProvider>
-        <div className="relative">
+        <div className="min-h-screen bg-light-100">
           <Routes>
             <Route path="/login" element={<LoginPage />} />
+            <Route path="/auth/callback" element={<AuthCallback />} />
             <Route
               path="/"
               element={

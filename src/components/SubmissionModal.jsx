@@ -12,13 +12,13 @@ const sessionTypes = [
 
 const SubmissionModal = ({ isOpen, onClose }) => {
   const [sessionType, setSessionType] = useState('topic')
-  const { submitTopic, submitVolunteer } = useSession()
+  const { createSession, submitVolunteer } = useSession()
   
   const { register, handleSubmit, reset, formState: { errors } } = useForm()
   
   const onSubmit = (data) => {
     if (sessionType === 'topic') {
-      submitTopic(data)
+      createSession(data)
     } else {
       submitVolunteer({
         ...data,

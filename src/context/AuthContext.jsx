@@ -73,13 +73,18 @@ export const AuthProvider = ({ children }) => {
     try {
       console.log('Starting sign in process...')
       
+      // Determine the current environment for redirect URL
+      const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+      const redirectUrl = isLocalhost 
+        ? `${window.location.origin}/auth/callback`
+        : 'https://reforge-sessions.vercel.app/auth/callback'
+      
+      console.log('Using redirect URL:', redirectUrl)
+      
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          queryParams: {
-            access_type: 'offline',
-            prompt: 'consent'
-          }
+          redirectTo: redirectUrl
         }
       })
       

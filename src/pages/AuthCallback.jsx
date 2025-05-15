@@ -10,46 +10,44 @@ const AuthCallback = () => {
       try {
         console.log('Handling auth callback...')
         
-        // Get the hash parameters from the URL
-        const hashParams = new URLSearchParams(window.location.hash.substring(1))
-        const accessToken = hashParams.get('access_token')
-        const refreshToken = hashParams.get('refresh_token')
-        
-        if (accessToken) {
-          console.log('Access token found in URL')
-          // Set the session using the tokens
-          const { data: { session }, error } = await supabase.auth.setSession({
-            access_token: accessToken,
-            refresh_token: refreshToken
-          })
+        // Try to get session from URL hash fragment
+        if (window.location.hash) {
+          console.log('Hash fragment found:', window.location.hash)
+          const hashParams = new URLSearchParams(window.location.hash.substring(1))
+          const accessToken = hashParams.get('access_token')
           
-          if (error) {
-            console.error('Error setting session:', error)
-            navigate('/login')
-            return
-          }
-
-          if (session) {
-            console.log('Session established:', session)
-            navigate('/')
-            return
+          if (accessToken) {
+            console.log('Access token found in URL')
+            // Set session directly from hash fragment
+            const { data, error } = await supabase.auth.setSession({
+              access_token: accessToken,
+              refresh_token: hashParams.get('refresh_token')
+            })
+            
+            if (error) {
+              console.error('Error setting session:', error)
+            } else if (data?.session) {
+              console.log('Session established from hash:', data.session)
+              navigate('/')
+              return
+            }
           }
         }
-
-        // If no access token in URL, try to get existing session
-        const { data: { session }, error } = await supabase.auth.getSession()
+        
+        // If we're still here, try to get existing session
+        const { data, error } = await supabase.auth.getSession()
         
         if (error) {
           console.error('Error getting session:', error)
           navigate('/login')
           return
         }
-
-        if (session) {
-          console.log('Existing session found:', session)
+        
+        if (data?.session) {
+          console.log('Session found:', data.session)
           navigate('/')
         } else {
-          console.log('No session found in callback')
+          console.log('No session found')
           navigate('/login')
         }
       } catch (err) {
@@ -68,4 +66,4 @@ const AuthCallback = () => {
   )
 }
 
-export default AuthCallback 
+export default AuthCallback

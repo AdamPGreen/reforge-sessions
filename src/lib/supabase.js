@@ -11,10 +11,6 @@ console.log('Using site URL:', siteUrl)
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
-    autoRefreshToken: true,
-    persistSession: true,
-    detectSessionInUrl: true,
-    flowType: 'implicit',
-    redirectTo: `${siteUrl}/auth/callback`
+    flowType: 'implicit'
   }
 })

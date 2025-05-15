@@ -1,9 +1,31 @@
-import { useEffect } from 'react'
+import { useEffect, Suspense } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 
+const LoadingSpinner = () => (
+  <div className="min-h-screen flex items-center justify-center">
+    <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-600" />
+  </div>
+)
+
+const ErrorFallback = ({ error }) => (
+  <div className="min-h-screen flex items-center justify-center">
+    <div className="text-red-600 p-4 rounded-lg bg-red-50">
+      <h2 className="text-lg font-semibold mb-2">Error Loading Content</h2>
+      <p className="text-sm">{error?.message || 'An unexpected error occurred'}</p>
+      <button 
+        type="button"
+        onClick={() => window.location.reload()} 
+        className="mt-4 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+      >
+        Refresh Page
+      </button>
+    </div>
+  </div>
+)
+
 const ProtectedRoute = ({ children }) => {
-  const { user, loading } = useAuth()
+  const { user, loading, error: authError } = useAuth()
   const navigate = useNavigate()
 
   useEffect(() => {
@@ -34,11 +56,7 @@ const ProtectedRoute = ({ children }) => {
       path: window.location.pathname,
       timestamp: Date.now()
     })
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-600" />
-      </div>
-    )
+    return <LoadingSpinner />
   }
 
   // If not loading and no user, show loading (will redirect in useEffect)
@@ -47,11 +65,18 @@ const ProtectedRoute = ({ children }) => {
       path: window.location.pathname,
       timestamp: Date.now()
     })
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-600" />
-      </div>
-    )
+    return <LoadingSpinner />
+  }
+
+  // If we have an auth error, show error state
+  if (authError) {
+    console.error('[ProtectedRoute] Auth error:', {
+      error: authError,
+      path: window.location.pathname,
+      userEmail: user.email,
+      timestamp: Date.now()
+    })
+    return <ErrorFallback error={authError} />
   }
 
   // If we have a user, render the children
@@ -61,27 +86,13 @@ const ProtectedRoute = ({ children }) => {
     timestamp: Date.now()
   })
 
-  try {
-    return (
-      <div className="protected-route-wrapper">
+  return (
+    <Suspense fallback={<LoadingSpinner />}>
+      <div className="protected-route-wrapper" data-testid="protected-route">
         {children}
       </div>
-    )
-  } catch (error) {
-    console.error('[ProtectedRoute] Error rendering protected content:', {
-      error,
-      path: window.location.pathname,
-      userEmail: user.email,
-      timestamp: Date.now()
-    })
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-red-600">
-          Error loading content. Please try refreshing the page.
-        </div>
-      </div>
-    )
-  }
+    </Suspense>
+  )
 }
 
 export default ProtectedRoute

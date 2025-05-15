@@ -27,7 +27,7 @@ const Header = ({ openModal }) => {
         <div className="flex items-center justify-between">
           <Link to="/" className="flex items-center">
             <img 
-              src="https://cltgdzmxfnyhdzdiuomy.supabase.co/storage/v1/object/public/app-assets//Reforge%20Logo%20Variants.png" 
+              src="https://mighkvgbmismttqlwfsy.supabase.co/storage/v1/object/public/app-assets//Reforge%20Logo%20Variants.png" 
               alt="Reforge" 
               className="h-5" 
             />

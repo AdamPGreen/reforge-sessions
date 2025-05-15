@@ -10,36 +10,57 @@ const AuthCallback = () => {
       try {
         console.log('Handling auth callback...')
         
+        // Check for error in URL
+        const urlParams = new URLSearchParams(window.location.search)
+        const authError = urlParams.get('error')
+        const errorDescription = urlParams.get('error_description')
+        
+        if (authError) {
+          console.error('Auth error:', authError, errorDescription)
+          navigate(`/login?error=${encodeURIComponent(errorDescription || authError)}`)
+          return
+        }
+
         // Try to get session from URL hash fragment
         if (window.location.hash) {
           console.log('Hash fragment found:', window.location.hash)
           const hashParams = new URLSearchParams(window.location.hash.substring(1))
           const accessToken = hashParams.get('access_token')
+          const refreshToken = hashParams.get('refresh_token')
           
-          if (accessToken) {
+          if (accessToken && refreshToken) {
             console.log('Access token found in URL')
-            // Set session directly from hash fragment
-            const { data, error } = await supabase.auth.setSession({
-              access_token: accessToken,
-              refresh_token: hashParams.get('refresh_token')
-            })
-            
-            if (error) {
-              console.error('Error setting session:', error)
-            } else if (data?.session) {
-              console.log('Session established from hash:', data.session)
-              navigate('/')
+            try {
+              const { data, error: sessionError } = await supabase.auth.setSession({
+                access_token: accessToken,
+                refresh_token: refreshToken
+              })
+              
+              if (sessionError) {
+                console.error('Error setting session:', sessionError)
+                navigate(`/login?error=${encodeURIComponent(sessionError.message)}`)
+                return
+              }
+              
+              if (data?.session) {
+                console.log('Session established from hash:', data.session)
+                navigate('/')
+                return
+              }
+            } catch (err) {
+              console.error('Error in setSession:', err)
+              navigate(`/login?error=${encodeURIComponent(err.message)}`)
               return
             }
           }
         }
         
         // If we're still here, try to get existing session
-        const { data, error } = await supabase.auth.getSession()
+        const { data, error: getSessionError } = await supabase.auth.getSession()
         
-        if (error) {
-          console.error('Error getting session:', error)
-          navigate('/login')
+        if (getSessionError) {
+          console.error('Error getting session:', getSessionError)
+          navigate(`/login?error=${encodeURIComponent(getSessionError.message)}`)
           return
         }
         
@@ -52,7 +73,7 @@ const AuthCallback = () => {
         }
       } catch (err) {
         console.error('Unexpected error in auth callback:', err)
-        navigate('/login')
+        navigate(`/login?error=${encodeURIComponent(err.message)}`)
       }
     }
 

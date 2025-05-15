@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { motion } from 'framer-motion'
 import { FiLock, FiLoader } from 'react-icons/fi'
@@ -7,15 +7,23 @@ import { FiLock, FiLoader } from 'react-icons/fi'
 const LoginPage = () => {
   const { user, signIn, error: authError } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState(null)
 
   useEffect(() => {
+    // Check for error in URL
+    const urlParams = new URLSearchParams(location.search)
+    const urlError = urlParams.get('error')
+    if (urlError) {
+      setError(decodeURIComponent(urlError))
+    }
+
     if (user) {
       console.log('User authenticated, redirecting to home')
       navigate('/')
     }
-  }, [user, navigate])
+  }, [user, navigate, location])
 
   useEffect(() => {
     // Check if we have an error from the auth provider

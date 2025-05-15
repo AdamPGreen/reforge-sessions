@@ -13,33 +13,33 @@ export const AuthProvider = ({ children }) => {
   const [error, setError] = useState(null)
 
   useEffect(() => {
-    console.log('9. AuthProvider useEffect starting')
     // Check active sessions and sets the user
     const checkSession = async () => {
       try {
-        console.log('10. Checking for existing session...')
+        console.log('Checking for existing session...')
         const { data: { session }, error } = await supabase.auth.getSession()
         
         if (error) {
-          console.error('11. Error getting session:', error)
+          console.error('Error getting session:', error)
           setError(error)
         } else {
-          console.log('12. Session check result:', session ? 'Session found' : 'No session')
-          console.log('13. Session details:', session)
+          console.log('Session check result:', session ? 'Session found' : 'No session')
+          console.log('Session details:', session)
           
           if (session?.user) {
-            console.log('14. User found:', session.user.email)
+            console.log('User email:', session.user.email)
+            console.log('User ID:', session.user.id)
+            console.log('User metadata:', session.user.user_metadata)
+            console.log('User app metadata:', session.user.app_metadata)
             setUser(session.user)
           } else {
-            console.log('15. No user found')
             setUser(null)
           }
         }
         
-        console.log('16. Setting loading to false')
         setLoading(false)
       } catch (err) {
-        console.error('17. Unexpected error during session check:', err)
+        console.error('Unexpected error during session check:', err)
         setError(err)
         setLoading(false)
       }
@@ -49,30 +49,24 @@ export const AuthProvider = ({ children }) => {
 
     // Listen for changes on auth state (signed in, signed out, etc.)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('18. Auth state changed in provider:', event)
-      console.log('19. Current loading state:', loading)
-      console.log('20. Current user state:', user?.email)
+      console.log('Auth state changed:', event)
+      console.log('Session:', session)
       
       if (event === 'SIGNED_IN') {
-        console.log('21. User signed in:', session?.user?.email)
+        console.log('User signed in:', session?.user?.email)
         // Verify the session is valid
         const { data: { session: currentSession } } = await supabase.auth.getSession()
-        console.log('22. Current session after sign in:', currentSession)
+        console.log('Current session after sign in:', currentSession)
         
         if (currentSession?.user) {
-          console.log('23. Setting user from current session')
           setUser(currentSession.user)
         }
       } else if (event === 'SIGNED_OUT') {
-        console.log('24. User signed out')
         setUser(null)
       }
     })
 
-    return () => {
-      console.log('25. Cleaning up auth subscription')
-      subscription.unsubscribe()
-    }
+    return () => subscription.unsubscribe()
   }, [])
 
   const signIn = async () => {
@@ -144,7 +138,6 @@ export const AuthProvider = ({ children }) => {
     error
   }
 
-  console.log('26. AuthProvider render - loading:', loading, 'user:', user?.email)
   return (
     <AuthContext.Provider value={value}>
       {!loading && children}

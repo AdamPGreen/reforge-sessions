@@ -16,21 +16,28 @@ export const AuthProvider = ({ children }) => {
     // Check active sessions and sets the user
     const checkSession = async () => {
       try {
-        console.log('Checking for existing session...')
+        console.log('[AuthContext] Checking for existing session...', {
+          timestamp: Date.now(),
+          path: window.location.pathname
+        })
         const { data: { session }, error } = await supabase.auth.getSession()
         
         if (error) {
-          console.error('Error getting session:', error)
+          console.error('[AuthContext] Error getting session:', error)
           setError(error)
         } else {
-          console.log('Session check result:', session ? 'Session found' : 'No session')
-          console.log('Session details:', session)
+          console.log('[AuthContext] Session check result:', {
+            hasSession: !!session,
+            userEmail: session?.user?.email,
+            timestamp: Date.now()
+          })
           
           if (session?.user) {
-            console.log('User email:', session.user.email)
-            console.log('User ID:', session.user.id)
-            console.log('User metadata:', session.user.user_metadata)
-            console.log('User app metadata:', session.user.app_metadata)
+            console.log('[AuthContext] Setting user:', {
+              email: session.user.email,
+              id: session.user.id,
+              timestamp: Date.now()
+            })
             setUser(session.user)
           } else {
             setUser(null)
@@ -39,7 +46,7 @@ export const AuthProvider = ({ children }) => {
         
         setLoading(false)
       } catch (err) {
-        console.error('Unexpected error during session check:', err)
+        console.error('[AuthContext] Unexpected error during session check:', err)
         setError(err)
         setLoading(false)
       }
@@ -49,19 +56,34 @@ export const AuthProvider = ({ children }) => {
 
     // Listen for changes on auth state (signed in, signed out, etc.)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('Auth state changed:', event)
-      console.log('Session:', session)
+      console.log('[AuthContext] Auth state changed:', {
+        event,
+        hasSession: !!session,
+        userEmail: session?.user?.email,
+        timestamp: Date.now(),
+        path: window.location.pathname
+      })
       
       if (event === 'SIGNED_IN') {
-        console.log('User signed in:', session?.user?.email)
+        console.log('[AuthContext] Processing sign in:', {
+          userEmail: session?.user?.email,
+          timestamp: Date.now()
+        })
         // Verify the session is valid
         const { data: { session: currentSession } } = await supabase.auth.getSession()
-        console.log('Current session after sign in:', currentSession)
+        console.log('[AuthContext] Current session after sign in:', {
+          hasSession: !!currentSession,
+          userEmail: currentSession?.user?.email,
+          timestamp: Date.now()
+        })
         
         if (currentSession?.user) {
           setUser(currentSession.user)
         }
       } else if (event === 'SIGNED_OUT') {
+        console.log('[AuthContext] Processing sign out:', {
+          timestamp: Date.now()
+        })
         setUser(null)
       }
     })

@@ -16,9 +16,20 @@ export function SessionProvider({ children }) {
   const [isAdmin, setIsAdmin] = useState(false)
 
   useEffect(() => {
+    console.log('[SessionContext] Initializing context:', {
+      timestamp: Date.now(),
+      path: window.location.pathname
+    })
+
     const checkAdmin = async () => {
       const { data: { user } } = await supabase.auth.getUser()
-      setIsAdmin(user?.email?.endsWith('@reforge.com') || false)
+      const adminStatus = user?.email?.endsWith('@reforge.com') || false
+      console.log('[SessionContext] Admin check:', {
+        userEmail: user?.email,
+        isAdmin: adminStatus,
+        timestamp: Date.now()
+      })
+      setIsAdmin(adminStatus)
     }
     
     checkAdmin()
@@ -27,6 +38,9 @@ export function SessionProvider({ children }) {
   }, [])
 
   const loadSessions = async () => {
+    console.log('[SessionContext] Loading sessions:', {
+      timestamp: Date.now()
+    })
     const { data: sessions } = await supabase
       .from('sessions')
       .select('*')
@@ -37,18 +51,32 @@ export function SessionProvider({ children }) {
       const upcomingSessions = sessions.filter(s => new Date(s.date) > now)
       const pastSessions = sessions.filter(s => new Date(s.date) <= now)
       
+      console.log('[SessionContext] Sessions loaded:', {
+        total: sessions.length,
+        upcoming: upcomingSessions.length,
+        past: pastSessions.length,
+        timestamp: Date.now()
+      })
+      
       setUpcoming(upcomingSessions)
       setPast(pastSessions)
     }
   }
 
   const loadTopics = async () => {
+    console.log('[SessionContext] Loading topics:', {
+      timestamp: Date.now()
+    })
     const { data } = await supabase
       .from('topics')
       .select('*')
       .order('votes', { ascending: false })
 
     if (data) {
+      console.log('[SessionContext] Topics loaded:', {
+        count: data.length,
+        timestamp: Date.now()
+      })
       setTopics(data)
     }
   }

@@ -14,8 +14,12 @@ export function SessionProvider({ children }) {
   const [topics, setTopics] = useState([])
   const [votes, setVotes] = useLocalStorage('session-votes', {})
   const [isAdmin, setIsAdmin] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState(null)
 
   useEffect(() => {
+    let mounted = true;
+
     console.log('[SessionContext] Initializing context:', {
       timestamp: Date.now(),
       path: window.location.pathname,
@@ -23,6 +27,8 @@ export function SessionProvider({ children }) {
     })
 
     const checkAdmin = async () => {
+      if (!mounted) return;
+      
       try {
         const { data: { user }, error } = await supabase.auth.getUser()
         if (error) {
@@ -43,22 +49,37 @@ export function SessionProvider({ children }) {
     }
     
     const initialize = async () => {
+      if (!mounted) return;
+      
       try {
+        setIsLoading(true)
+        setError(null)
+        
         await Promise.all([
           checkAdmin(),
           loadSessions(),
           loadTopics()
         ])
+        
         console.log('[SessionContext] Initialization complete:', {
           timestamp: Date.now(),
           stack: new Error().stack
         })
       } catch (err) {
         console.error('[SessionContext] Error during initialization:', err)
+        setError(err)
+      } finally {
+        if (mounted) {
+          setIsLoading(false)
+        }
       }
     }
     
     initialize()
+
+    return () => {
+      mounted = false
+    }
   }, [])
 
   const loadSessions = async () => {
@@ -74,7 +95,7 @@ export function SessionProvider({ children }) {
 
       if (error) {
         console.error('[SessionContext] Error loading sessions:', error)
-        return
+        throw error
       }
 
       if (sessions) {
@@ -95,6 +116,7 @@ export function SessionProvider({ children }) {
       }
     } catch (err) {
       console.error('[SessionContext] Unexpected error loading sessions:', err)
+      throw err
     }
   }
 
@@ -111,7 +133,7 @@ export function SessionProvider({ children }) {
 
       if (error) {
         console.error('[SessionContext] Error loading topics:', error)
-        return
+        throw error
       }
 
       if (data) {
@@ -124,6 +146,7 @@ export function SessionProvider({ children }) {
       }
     } catch (err) {
       console.error('[SessionContext] Unexpected error loading topics:', err)
+      throw err
     }
   }
 
@@ -221,6 +244,8 @@ export function SessionProvider({ children }) {
     topics,
     votes,
     isAdmin,
+    isLoading,
+    error,
     isVoted,
     voteForTopic,
     submitTopic,

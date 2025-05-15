@@ -14,8 +14,13 @@ export const AuthProvider = ({ children }) => {
   const [sessionState, setSessionState] = useState('initializing')
 
   useEffect(() => {
+    let mounted = true;
+    let authSubscription = null;
+
     // Check active sessions and sets the user
     const checkSession = async () => {
+      if (!mounted) return;
+      
       try {
         console.log('[AuthContext] Checking for existing session...')
         setSessionState('checking')
@@ -58,6 +63,8 @@ export const AuthProvider = ({ children }) => {
 
     // Listen for changes on auth state (signed in, signed out, etc.)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (!mounted) return;
+
       console.log('[AuthContext] Auth state changed:', {
         event,
         session: session ? {
@@ -123,7 +130,15 @@ export const AuthProvider = ({ children }) => {
       }
     })
 
-    return () => subscription.unsubscribe()
+    authSubscription = subscription;
+
+    return () => {
+      mounted = false;
+      if (authSubscription) {
+        console.log('[AuthContext] Cleaning up auth subscription')
+        authSubscription.unsubscribe()
+      }
+    }
   }, [])
 
   const signIn = async () => {

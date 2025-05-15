@@ -6,7 +6,11 @@ const AuthCallback = () => {
   const navigate = useNavigate()
 
   useEffect(() => {
+    let mounted = true;
+
     const handleCallback = async () => {
+      if (!mounted) return;
+
       try {
         console.log('Handling auth callback...')
         
@@ -127,6 +131,10 @@ const AuthCallback = () => {
     }
 
     handleCallback()
+
+    return () => {
+      mounted = false
+    }
   }, [navigate])
 
   return (

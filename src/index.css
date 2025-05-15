@@ -1,0 +1,58 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@font-face {
+  font-family: 'PolySans';
+  src: url('https://cltgdzmxfnyhdzdiuomy.supabase.co/storage/v1/object/public/app-assets//PolySans-Median.otf') format('opentype');
+  font-weight: 500;
+  font-style: normal;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  min-height: 100vh;
+  overflow-x: hidden;
+  font-family: 'Inter', sans-serif;
+  line-height: 1.5;
+  color: #080A0A;
+}
+
+.gradient-text {
+  font-family: 'PolySans', sans-serif;
+  background: linear-gradient(295deg, #AAF3F1 25.4%, #FFA2CF 88.03%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  padding-bottom: 4px;
+}
+
+.scroll-container {
+  scrollbar-width: thin;
+  scrollbar-color: #d8d6d0 #EFEDE6;
+}
+
+.scroll-container::-webkit-scrollbar {
+  height: 6px;
+}
+
+.scroll-container::-webkit-scrollbar-track {
+  background: #EFEDE6;
+  border-radius: 3px;
+}
+
+.scroll-container::-webkit-scrollbar-thumb {
+  background-color: #d8d6d0;
+  border-radius: 3px;
+}
+
+.gradient-bg {
+  background: linear-gradient(295deg, #AAF3F1 100%, #FFA2CF 100%);
+  opacity: 1;
+  filter: blur(150px);
+}

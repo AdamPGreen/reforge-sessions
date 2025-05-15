@@ -23,13 +23,22 @@ const AuthCallback = () => {
 
         // Try to get session from URL hash fragment
         if (window.location.hash) {
-          console.log('Hash fragment found:', window.location.hash)
+          console.log('Hash fragment found:', {
+            hash: window.location.hash,
+            timestamp: Date.now(),
+            stack: new Error().stack
+          })
           const hashParams = new URLSearchParams(window.location.hash.substring(1))
           const accessToken = hashParams.get('access_token')
           const refreshToken = hashParams.get('refresh_token')
           
           if (accessToken && refreshToken) {
-            console.log('Access token found in URL')
+            console.log('Access token found in URL:', {
+              hasAccessToken: !!accessToken,
+              hasRefreshToken: !!refreshToken,
+              timestamp: Date.now(),
+              stack: new Error().stack
+            })
             try {
               const { data, error: sessionError } = await supabase.auth.setSession({
                 access_token: accessToken,
@@ -37,18 +46,36 @@ const AuthCallback = () => {
               })
               
               if (sessionError) {
-                console.error('Error setting session:', sessionError)
+                console.error('Error setting session:', {
+                  error: sessionError,
+                  timestamp: Date.now(),
+                  stack: new Error().stack
+                })
                 navigate(`/login?error=${encodeURIComponent(sessionError.message)}`)
                 return
               }
               
               if (data?.session) {
-                console.log('Session established from hash:', data.session)
+                console.log('Session established from hash:', {
+                  session: {
+                    user: {
+                      email: data.session.user.email,
+                      id: data.session.user.id
+                    },
+                    expires_at: data.session.expires_at
+                  },
+                  timestamp: Date.now(),
+                  stack: new Error().stack
+                })
                 navigate('/')
                 return
               }
             } catch (err) {
-              console.error('Error in setSession:', err)
+              console.error('Error in setSession:', {
+                error: err,
+                timestamp: Date.now(),
+                stack: new Error().stack
+              })
               navigate(`/login?error=${encodeURIComponent(err.message)}`)
               return
             }
@@ -56,19 +83,41 @@ const AuthCallback = () => {
         }
         
         // If we're still here, try to get existing session
+        console.log('Attempting to get existing session:', {
+          timestamp: Date.now(),
+          stack: new Error().stack
+        })
+        
         const { data, error: getSessionError } = await supabase.auth.getSession()
         
         if (getSessionError) {
-          console.error('Error getting session:', getSessionError)
+          console.error('Error getting session:', {
+            error: getSessionError,
+            timestamp: Date.now(),
+            stack: new Error().stack
+          })
           navigate(`/login?error=${encodeURIComponent(getSessionError.message)}`)
           return
         }
         
         if (data?.session) {
-          console.log('Session found:', data.session)
+          console.log('Session found:', {
+            session: {
+              user: {
+                email: data.session.user.email,
+                id: data.session.user.id
+              },
+              expires_at: data.session.expires_at
+            },
+            timestamp: Date.now(),
+            stack: new Error().stack
+          })
           navigate('/')
         } else {
-          console.log('No session found')
+          console.log('No session found:', {
+            timestamp: Date.now(),
+            stack: new Error().stack
+          })
           navigate('/login')
         }
       } catch (err) {

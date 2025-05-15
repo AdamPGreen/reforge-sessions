@@ -67,37 +67,57 @@ export const AuthProvider = ({ children }) => {
           },
           expires_at: session.expires_at
         } : null,
-        timestamp: Date.now()
+        timestamp: Date.now(),
+        stack: new Error().stack
       })
       
       if (event === 'SIGNED_IN') {
         console.log('[AuthContext] Processing sign in:', {
           userEmail: session?.user?.email,
-          timestamp: Date.now()
+          timestamp: Date.now(),
+          stack: new Error().stack
         })
         setSessionState('authenticating')
         
-        // Verify the session is valid
-        const { data: { session: currentSession } } = await supabase.auth.getSession()
-        console.log('[AuthContext] Current session after sign in:', {
-          session: currentSession ? {
-            user: {
+        try {
+          // Verify the session is valid
+          const { data: { session: currentSession }, error: sessionError } = await supabase.auth.getSession()
+          
+          console.log('[AuthContext] Session verification:', {
+            hasSession: !!currentSession,
+            error: sessionError,
+            timestamp: Date.now(),
+            stack: new Error().stack
+          })
+          
+          if (sessionError) {
+            console.error('[AuthContext] Session verification error:', sessionError)
+            setSessionState('error')
+            setError(sessionError)
+            return
+          }
+          
+          if (currentSession?.user) {
+            console.log('[AuthContext] Setting authenticated user:', {
               email: currentSession.user.email,
-              id: currentSession.user.id
-            },
-            expires_at: currentSession.expires_at
-          } : null,
-          timestamp: Date.now()
-        })
-        
-        if (currentSession?.user) {
-          setUser(currentSession.user)
-          setSessionState('authenticated')
-        } else {
+              timestamp: Date.now()
+            })
+            setUser(currentSession.user)
+            setSessionState('authenticated')
+          } else {
+            console.error('[AuthContext] No user in verified session')
+            setSessionState('error')
+            setError(new Error('Failed to establish session after sign in'))
+          }
+        } catch (err) {
+          console.error('[AuthContext] Unexpected error during session verification:', err)
           setSessionState('error')
-          setError(new Error('Failed to establish session after sign in'))
+          setError(err)
         }
       } else if (event === 'SIGNED_OUT') {
+        console.log('[AuthContext] Processing sign out:', {
+          timestamp: Date.now()
+        })
         setUser(null)
         setSessionState('unauthenticated')
       }

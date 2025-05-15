@@ -18,66 +18,112 @@ export function SessionProvider({ children }) {
   useEffect(() => {
     console.log('[SessionContext] Initializing context:', {
       timestamp: Date.now(),
-      path: window.location.pathname
+      path: window.location.pathname,
+      stack: new Error().stack
     })
 
     const checkAdmin = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
-      const adminStatus = user?.email?.endsWith('@reforge.com') || false
-      console.log('[SessionContext] Admin check:', {
-        userEmail: user?.email,
-        isAdmin: adminStatus,
-        timestamp: Date.now()
-      })
-      setIsAdmin(adminStatus)
+      try {
+        const { data: { user }, error } = await supabase.auth.getUser()
+        if (error) {
+          console.error('[SessionContext] Error checking admin status:', error)
+          return
+        }
+        const adminStatus = user?.email?.endsWith('@reforge.com') || false
+        console.log('[SessionContext] Admin check:', {
+          userEmail: user?.email,
+          isAdmin: adminStatus,
+          timestamp: Date.now(),
+          stack: new Error().stack
+        })
+        setIsAdmin(adminStatus)
+      } catch (err) {
+        console.error('[SessionContext] Unexpected error during admin check:', err)
+      }
     }
     
-    checkAdmin()
-    loadSessions()
-    loadTopics()
+    const initialize = async () => {
+      try {
+        await Promise.all([
+          checkAdmin(),
+          loadSessions(),
+          loadTopics()
+        ])
+        console.log('[SessionContext] Initialization complete:', {
+          timestamp: Date.now(),
+          stack: new Error().stack
+        })
+      } catch (err) {
+        console.error('[SessionContext] Error during initialization:', err)
+      }
+    }
+    
+    initialize()
   }, [])
 
   const loadSessions = async () => {
     console.log('[SessionContext] Loading sessions:', {
-      timestamp: Date.now()
+      timestamp: Date.now(),
+      stack: new Error().stack
     })
-    const { data: sessions } = await supabase
-      .from('sessions')
-      .select('*')
-      .order('date', { ascending: true })
+    try {
+      const { data: sessions, error } = await supabase
+        .from('sessions')
+        .select('*')
+        .order('date', { ascending: true })
 
-    if (sessions) {
-      const now = new Date()
-      const upcomingSessions = sessions.filter(s => new Date(s.date) > now)
-      const pastSessions = sessions.filter(s => new Date(s.date) <= now)
-      
-      console.log('[SessionContext] Sessions loaded:', {
-        total: sessions.length,
-        upcoming: upcomingSessions.length,
-        past: pastSessions.length,
-        timestamp: Date.now()
-      })
-      
-      setUpcoming(upcomingSessions)
-      setPast(pastSessions)
+      if (error) {
+        console.error('[SessionContext] Error loading sessions:', error)
+        return
+      }
+
+      if (sessions) {
+        const now = new Date()
+        const upcomingSessions = sessions.filter(s => new Date(s.date) > now)
+        const pastSessions = sessions.filter(s => new Date(s.date) <= now)
+        
+        console.log('[SessionContext] Sessions loaded:', {
+          total: sessions.length,
+          upcoming: upcomingSessions.length,
+          past: pastSessions.length,
+          timestamp: Date.now(),
+          stack: new Error().stack
+        })
+        
+        setUpcoming(upcomingSessions)
+        setPast(pastSessions)
+      }
+    } catch (err) {
+      console.error('[SessionContext] Unexpected error loading sessions:', err)
     }
   }
 
   const loadTopics = async () => {
     console.log('[SessionContext] Loading topics:', {
-      timestamp: Date.now()
+      timestamp: Date.now(),
+      stack: new Error().stack
     })
-    const { data } = await supabase
-      .from('topics')
-      .select('*')
-      .order('votes', { ascending: false })
+    try {
+      const { data, error } = await supabase
+        .from('topics')
+        .select('*')
+        .order('votes', { ascending: false })
 
-    if (data) {
-      console.log('[SessionContext] Topics loaded:', {
-        count: data.length,
-        timestamp: Date.now()
-      })
-      setTopics(data)
+      if (error) {
+        console.error('[SessionContext] Error loading topics:', error)
+        return
+      }
+
+      if (data) {
+        console.log('[SessionContext] Topics loaded:', {
+          count: data.length,
+          timestamp: Date.now(),
+          stack: new Error().stack
+        })
+        setTopics(data)
+      }
+    } catch (err) {
+      console.error('[SessionContext] Unexpected error loading topics:', err)
     }
   }
 

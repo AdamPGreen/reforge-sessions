@@ -11,36 +11,37 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [sessionState, setSessionState] = useState('initializing')
 
   useEffect(() => {
     // Check active sessions and sets the user
     const checkSession = async () => {
       try {
-        console.log('[AuthContext] Checking for existing session...', {
-          timestamp: Date.now(),
-          path: window.location.pathname
-        })
+        console.log('[AuthContext] Checking for existing session...')
+        setSessionState('checking')
+        
         const { data: { session }, error } = await supabase.auth.getSession()
         
         if (error) {
           console.error('[AuthContext] Error getting session:', error)
           setError(error)
+          setSessionState('error')
         } else {
-          console.log('[AuthContext] Session check result:', {
-            hasSession: !!session,
-            userEmail: session?.user?.email,
-            timestamp: Date.now()
-          })
+          console.log('[AuthContext] Session check result:', session ? 'Session found' : 'No session')
+          console.log('[AuthContext] Session details:', session)
           
           if (session?.user) {
-            console.log('[AuthContext] Setting user:', {
+            console.log('[AuthContext] User details:', {
               email: session.user.email,
               id: session.user.id,
-              timestamp: Date.now()
+              metadata: session.user.user_metadata,
+              appMetadata: session.user.app_metadata
             })
             setUser(session.user)
+            setSessionState('authenticated')
           } else {
             setUser(null)
+            setSessionState('unauthenticated')
           }
         }
         
@@ -48,6 +49,7 @@ export const AuthProvider = ({ children }) => {
       } catch (err) {
         console.error('[AuthContext] Unexpected error during session check:', err)
         setError(err)
+        setSessionState('error')
         setLoading(false)
       }
     }
@@ -58,10 +60,14 @@ export const AuthProvider = ({ children }) => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log('[AuthContext] Auth state changed:', {
         event,
-        hasSession: !!session,
-        userEmail: session?.user?.email,
-        timestamp: Date.now(),
-        path: window.location.pathname
+        session: session ? {
+          user: {
+            email: session.user.email,
+            id: session.user.id
+          },
+          expires_at: session.expires_at
+        } : null,
+        timestamp: Date.now()
       })
       
       if (event === 'SIGNED_IN') {
@@ -69,22 +75,31 @@ export const AuthProvider = ({ children }) => {
           userEmail: session?.user?.email,
           timestamp: Date.now()
         })
+        setSessionState('authenticating')
+        
         // Verify the session is valid
         const { data: { session: currentSession } } = await supabase.auth.getSession()
         console.log('[AuthContext] Current session after sign in:', {
-          hasSession: !!currentSession,
-          userEmail: currentSession?.user?.email,
+          session: currentSession ? {
+            user: {
+              email: currentSession.user.email,
+              id: currentSession.user.id
+            },
+            expires_at: currentSession.expires_at
+          } : null,
           timestamp: Date.now()
         })
         
         if (currentSession?.user) {
           setUser(currentSession.user)
+          setSessionState('authenticated')
+        } else {
+          setSessionState('error')
+          setError(new Error('Failed to establish session after sign in'))
         }
       } else if (event === 'SIGNED_OUT') {
-        console.log('[AuthContext] Processing sign out:', {
-          timestamp: Date.now()
-        })
         setUser(null)
+        setSessionState('unauthenticated')
       }
     })
 
@@ -93,7 +108,8 @@ export const AuthProvider = ({ children }) => {
 
   const signIn = async () => {
     try {
-      console.log('Starting sign in process...')
+      console.log('[AuthContext] Starting sign in process...')
+      setSessionState('signing_in')
       
       // Determine the current environment for redirect URL
       const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
@@ -101,7 +117,7 @@ export const AuthProvider = ({ children }) => {
         ? `${window.location.origin}/auth/callback`
         : 'https://reforge-sessions.vercel.app/auth/callback'
       
-      console.log('Using redirect URL:', redirectUrl)
+      console.log('[AuthContext] Using redirect URL:', redirectUrl)
       
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
@@ -111,43 +127,51 @@ export const AuthProvider = ({ children }) => {
       })
       
       if (error) {
-        console.error('Error signing in:', error)
+        console.error('[AuthContext] Error signing in:', error)
         setError(error)
+        setSessionState('error')
         return { error }
       }
       
-      console.log('Sign in response:', data)
+      console.log('[AuthContext] Sign in response:', data)
       
       // If we have a URL, we need to redirect
       if (data?.url) {
-        console.log('Redirecting to:', data.url)
+        console.log('[AuthContext] Redirecting to:', data.url)
         window.location.href = data.url
         return { data }
       }
       
       return { data }
     } catch (err) {
-      console.error('Unexpected error during sign in:', err)
+      console.error('[AuthContext] Unexpected error during sign in:', err)
       setError(err)
+      setSessionState('error')
       return { error: err }
     }
   }
 
   const signOut = async () => {
     try {
+      console.log('[AuthContext] Starting sign out process...')
+      setSessionState('signing_out')
+      
       const { error } = await supabase.auth.signOut()
       
       if (error) {
-        console.error('Error signing out:', error)
+        console.error('[AuthContext] Error signing out:', error)
         setError(error)
+        setSessionState('error')
         return { error }
       }
       
       setUser(null)
+      setSessionState('unauthenticated')
       return { success: true }
     } catch (err) {
-      console.error('Unexpected error during sign out:', err)
+      console.error('[AuthContext] Unexpected error during sign out:', err)
       setError(err)
+      setSessionState('error')
       return { error: err }
     }
   }
@@ -157,12 +181,13 @@ export const AuthProvider = ({ children }) => {
     signOut,
     user,
     loading,
-    error
+    error,
+    sessionState
   }
 
   return (
     <AuthContext.Provider value={value}>
-      {!loading && children}
+      {children}
     </AuthContext.Provider>
   )
 }

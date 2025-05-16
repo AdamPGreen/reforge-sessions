@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { FiThumbsUp, FiEdit2, FiTrash2, FiCheck, FiX, FiUser } from 'react-icons/fi'
 import { useSession } from '../context/SessionContext'
@@ -10,10 +10,17 @@ const TopicCard = ({ topic }) => {
   const [isEditing, setIsEditing] = useState(false)
   const [editedTitle, setEditedTitle] = useState(topic.title)
   const [editedDescription, setEditedDescription] = useState(topic.description)
+  const [isVoting, setIsVoting] = useState(false)
   
   const handleVote = async () => {
-    if (!user) return
-    await voteForTopic(topic.id)
+    if (!user || isVoting) return
+    
+    try {
+      setIsVoting(true)
+      await voteForTopic(topic.id)
+    } finally {
+      setIsVoting(false)
+    }
   }
 
   const handleEdit = async () => {
@@ -95,9 +102,12 @@ const TopicCard = ({ topic }) => {
           <motion.button
             type="button"
             onClick={handleVote}
+            disabled={!user || isVoting}
             className={`flex flex-col items-center justify-center min-w-[60px] p-2 rounded-md transition-colors ${
-              isVoted(topic.id) ? 'bg-primary-100 text-primary-700' : 'bg-light-100 text-dark-500 hover:bg-light-200'
-            }`}
+              isVoted(topic.id) 
+                ? 'bg-primary-100 text-primary-700' 
+                : 'bg-light-100 text-dark-500 hover:bg-light-200'
+            } ${(!user || isVoting) ? 'opacity-50 cursor-not-allowed' : ''}`}
             whileTap={{ scale: 0.95 }}
           >
             <AnimatePresence mode="popLayout">

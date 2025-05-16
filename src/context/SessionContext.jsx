@@ -65,6 +65,33 @@ export function SessionProvider({ children }) {
         console.error('[SessionContext] Unexpected error during admin check:', err)
       }
     }
+
+    const loadUserVotes = async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+
+      try {
+        const { data: votes, error } = await supabase
+          .from('votes')
+          .select('topic_id')
+          .eq('user_id', user.id)
+
+        if (error) {
+          console.error('[SessionContext] Error loading user votes:', error)
+          return
+        }
+
+        // Convert array of vote objects to object with topic_ids as keys
+        const votesMap = votes.reduce((acc, vote) => {
+          acc[vote.topic_id] = true
+          return acc
+        }, {})
+
+        setVotes(votesMap)
+      } catch (err) {
+        console.error('[SessionContext] Unexpected error loading user votes:', err)
+      }
+    }
     
     const initialize = async () => {
       if (!mounted) return;
@@ -76,7 +103,8 @@ export function SessionProvider({ children }) {
         await Promise.all([
           checkAdmin(),
           loadSessions(),
-          loadTopics()
+          loadTopics(),
+          loadUserVotes()
         ])
         
         console.log('[SessionContext] Initialization complete:', {
@@ -146,7 +174,10 @@ export function SessionProvider({ children }) {
     try {
       const { data, error } = await supabase
         .from('topics')
-        .select('*')
+        .select(`
+          *,
+          votes:votes(count)
+        `)
         .order('votes', { ascending: false })
 
       if (error) {
@@ -155,12 +186,18 @@ export function SessionProvider({ children }) {
       }
 
       if (data) {
+        // Transform the data to include the vote count
+        const topicsWithVotes = data.map(topic => ({
+          ...topic,
+          votes: topic.votes?.[0]?.count || 0
+        }))
+
         console.log('[SessionContext] Topics loaded:', {
-          count: data.length,
+          count: topicsWithVotes.length,
           timestamp: Date.now(),
           stack: new Error().stack
         })
-        setTopics(data)
+        setTopics(topicsWithVotes)
       }
     } catch (err) {
       console.error('[SessionContext] Unexpected error loading topics:', err)
@@ -186,31 +223,43 @@ export function SessionProvider({ children }) {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
 
-    if (votes[topicId]) {
-      await supabase
-        .from('votes')
-        .delete()
-        .match({ topic_id: topicId, user_id: user.id })
-      
-      await supabase.rpc('decrement_votes', { topic_id: topicId })
-    } else {
-      await supabase
-        .from('votes')
-        .insert({ topic_id: topicId, user_id: user.id })
-      
-      await supabase.rpc('increment_votes', { topic_id: topicId })
-    }
+    try {
+      const hasVoted = votes[topicId]
 
-    setVotes(prev => {
-      if (prev[topicId]) {
-        const newVotes = { ...prev }
-        delete newVotes[topicId]
-        return newVotes
+      if (hasVoted) {
+        // Remove vote
+        const { error: deleteError } = await supabase
+          .from('votes')
+          .delete()
+          .match({ topic_id: topicId, user_id: user.id })
+
+        if (deleteError) throw deleteError
+
+        // Update local state
+        setVotes(prev => {
+          const newVotes = { ...prev }
+          delete newVotes[topicId]
+          return newVotes
+        })
+      } else {
+        // Add vote
+        const { error: insertError } = await supabase
+          .from('votes')
+          .insert({ topic_id: topicId, user_id: user.id })
+
+        if (insertError) throw insertError
+
+        // Update local state
+        setVotes(prev => ({ ...prev, [topicId]: true }))
       }
-      return { ...prev, [topicId]: true }
-    })
 
-    await loadTopics()
+      // Reload topics to get fresh vote counts
+      await loadTopics()
+    } catch (error) {
+      console.error('Error voting for topic:', error)
+      // Reload topics and votes to ensure UI is in sync
+      await Promise.all([loadTopics(), loadUserVotes()])
+    }
   }
 
   const updateTopic = async (topicId, updates) => {

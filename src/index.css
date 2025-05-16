@@ -7,6 +7,7 @@
   src: url('https://mighkvgbmismttqlwfsy.supabase.co/storage/v1/object/public/app-assets//PolySans-Neutral.otf') format('opentype');
   font-weight: normal;
   font-style: normal;
+  font-display: swap;
 }
 
 * {
@@ -24,12 +25,13 @@ body {
 }
 
 .gradient-text {
-  font-family: 'PolySans', sans-serif;
+  font-family: 'PolySans', 'Inter', sans-serif;
   background: linear-gradient(295deg, #AAF3F1 25.4%, #FFA2CF 88.03%);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
   padding-bottom: 4px;
+  font-weight: normal;
 }
 
 .scroll-container {

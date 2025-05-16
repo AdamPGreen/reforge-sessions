@@ -9,7 +9,6 @@ import { SessionProvider } from './context/SessionContext'
 import { AuthProvider } from './context/AuthContext'
 import SubmissionModal from './components/SubmissionModal'
 import ProtectedRoute from './components/ProtectedRoute'
-import AuthCallback from './pages/AuthCallback'
 import ErrorBoundary from './components/ErrorBoundary'
 
 function App() {
@@ -32,7 +31,6 @@ function App() {
           <div className="min-h-screen bg-light-50">
             <Routes>
               <Route path="/login" element={<LoginPage />} />
-              <Route path="/auth/callback" element={<AuthCallback />} />
               <Route
                 path="/"
                 element={

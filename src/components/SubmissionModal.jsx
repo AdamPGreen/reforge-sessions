@@ -5,13 +5,13 @@ import { useForm } from 'react-hook-form'
 import { useSession } from '../context/SessionContext'
 
 const sessionTypes = [
-  { id: 'internal', label: 'Internal Session' },
+  { id: 'internal', label: 'Internal Presenter' },
   { id: 'expert', label: 'External Expert' },
   { id: 'topic', label: 'Topic Suggestion' }
 ]
 
 const SubmissionModal = ({ isOpen, onClose }) => {
-  const [sessionType, setSessionType] = useState('topic')
+  const [sessionType, setSessionType] = useState('internal')
   const { createSession, submitVolunteer } = useSession()
   
   const { register, handleSubmit, reset, formState: { errors } } = useForm()
@@ -55,6 +55,7 @@ const SubmissionModal = ({ isOpen, onClose }) => {
                 <div className="flex justify-between items-center p-6 border-b border-light-200">
                   <h2 className="text-xl font-semibold text-dark-900">Suggest a Session</h2>
                   <button 
+                    type="button"
                     onClick={onClose}
                     className="text-dark-500 hover:text-dark-700 transition-colors"
                   >
@@ -64,13 +65,14 @@ const SubmissionModal = ({ isOpen, onClose }) => {
                 
                 <div className="p-6">
                   <div className="mb-6">
-                    <label className="block text-sm font-medium text-dark-700 mb-2">
+                    <label htmlFor="session-type" className="block text-sm font-medium text-dark-700 mb-2">
                       What type of session would you like to suggest?
                     </label>
-                    <div className="grid grid-cols-3 gap-3">
+                    <div id="session-type" className="grid grid-cols-3 gap-3">
                       {sessionTypes.map(type => (
                         <button
                           key={type.id}
+                          type="button"
                           className={`p-3 text-sm font-medium rounded-lg transition-colors ${
                             sessionType === type.id
                               ? 'bg-primary-100 text-primary-700 border-2 border-primary-200'
@@ -88,10 +90,11 @@ const SubmissionModal = ({ isOpen, onClose }) => {
                     {sessionType === 'expert' && (
                       <>
                         <div>
-                          <label className="block text-sm font-medium text-dark-700 mb-1">
+                          <label htmlFor="expert-speaker" className="block text-sm font-medium text-dark-700 mb-1">
                             Expert's Name
                           </label>
                           <input
+                            id="expert-speaker"
                             {...register('speaker', { required: 'Expert name is required' })}
                             className="w-full px-4 py-2 rounded-lg border border-light-300 focus:outline-none focus:ring-2 focus:ring-primary-500"
                             placeholder="Who would you like to invite?"
@@ -101,8 +104,9 @@ const SubmissionModal = ({ isOpen, onClose }) => {
                           )}
                         </div>
                         <div>
-                          <label className="flex items-center space-x-2">
+                          <label htmlFor="is-external-expert" className="flex items-center space-x-2">
                             <input
+                              id="is-external-expert"
                               type="checkbox"
                               {...register('isExternalExpert')}
                               className="w-4 h-4 text-primary-600 rounded border-light-300 focus:ring-primary-500"
@@ -114,41 +118,28 @@ const SubmissionModal = ({ isOpen, onClose }) => {
                     )}
 
                     {sessionType === 'internal' && (
-                      <>
-                        <div>
-                          <label className="block text-sm font-medium text-dark-700 mb-1">
-                            Presenter Name
-                          </label>
-                          <input
-                            {...register('speaker', { required: 'Your name is required' })}
-                            className="w-full px-4 py-2 rounded-lg border border-light-300 focus:outline-none focus:ring-2 focus:ring-primary-500"
-                            placeholder="Who will be presenting?"
-                          />
-                          {errors.speaker && (
-                            <p className="text-red-500 text-sm mt-1">{errors.speaker.message}</p>
-                          )}
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium text-dark-700 mb-1">
-                            Preferred Date
-                          </label>
-                          <input
-                            type="datetime-local"
-                            {...register('date', { required: 'Date is required' })}
-                            className="w-full px-4 py-2 rounded-lg border border-light-300 focus:outline-none focus:ring-2 focus:ring-primary-500"
-                          />
-                          {errors.date && (
-                            <p className="text-red-500 text-sm mt-1">{errors.date.message}</p>
-                          )}
-                        </div>
-                      </>
+                      <div>
+                        <label htmlFor="internal-speaker" className="block text-sm font-medium text-dark-700 mb-1">
+                          Presenter Name
+                        </label>
+                        <input
+                          id="internal-speaker"
+                          {...register('speaker', { required: 'Your name is required' })}
+                          className="w-full px-4 py-2 rounded-lg border border-light-300 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                          placeholder="Who will be presenting?"
+                        />
+                        {errors.speaker && (
+                          <p className="text-red-500 text-sm mt-1">{errors.speaker.message}</p>
+                        )}
+                      </div>
                     )}
 
                     <div>
-                      <label className="block text-sm font-medium text-dark-700 mb-1">
+                      <label htmlFor="session-title" className="block text-sm font-medium text-dark-700 mb-1">
                         Session Title
                       </label>
                       <input
+                        id="session-title"
                         {...register('title', { required: 'Title is required' })}
                         className="w-full px-4 py-2 rounded-lg border border-light-300 focus:outline-none focus:ring-2 focus:ring-primary-500"
                         placeholder="What's the session about?"
@@ -159,10 +150,11 @@ const SubmissionModal = ({ isOpen, onClose }) => {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-dark-700 mb-1">
+                      <label htmlFor="session-description" className="block text-sm font-medium text-dark-700 mb-1">
                         Description
                       </label>
                       <textarea
+                        id="session-description"
                         {...register('description', { required: 'Description is required' })}
                         className="w-full px-4 py-2 rounded-lg border border-light-300 focus:outline-none focus:ring-2 focus:ring-primary-500"
                         rows={4}

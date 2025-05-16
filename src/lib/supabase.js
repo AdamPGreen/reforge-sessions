@@ -8,17 +8,7 @@ if (!supabaseUrl || !supabaseAnonKey) {
 }
 
 // Initialize Supabase client
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-  auth: {
-    autoRefreshToken: true,
-    persistSession: true,
-    detectSessionInUrl: true,
-    flowType: 'pkce',
-    debug: true,
-    storageKey: 'sb-auth-token',
-    storage: window.localStorage
-  }
-})
+export const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
 // Debug logging for auth state changes
 supabase.auth.onAuthStateChange((event, session) => {

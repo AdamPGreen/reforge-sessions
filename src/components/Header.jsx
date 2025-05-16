@@ -1,14 +1,16 @@
 import { useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { FiMenu, FiX, FiLogIn, FiLogOut } from 'react-icons/fi'
+import { FiMenu, FiX, FiLogIn, FiLogOut, FiSettings } from 'react-icons/fi'
 import { useAuth } from '../context/AuthContext'
+import { useSession } from '../context/SessionContext'
 
 const Header = ({ openModal }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const location = useLocation()
   const navigate = useNavigate()
   const { user, signOut } = useAuth()
+  const { isAdmin } = useSession()
   
   const toggleMobileMenu = () => setIsMobileMenuOpen(!isMobileMenuOpen)
 
@@ -59,6 +61,19 @@ const Header = ({ openModal }) => {
             >
               Past Sessions
             </Link>
+            {isAdmin && (
+              <Link 
+                to="/admin" 
+                className={`text-[13px] font-medium hover:text-dark-900 transition-colors ${
+                  location.pathname === '/admin' ? 'text-dark-900' : 'text-dark-500'
+                }`}
+              >
+                <div className="flex items-center gap-1">
+                  <FiSettings size={14} />
+                  <span>Admin</span>
+                </div>
+              </Link>
+            )}
             <motion.button
               onClick={openModal}
               className="px-4 py-[6px] text-[13px] font-medium bg-dark-900 text-white rounded-lg hover:bg-dark-800 transition-all"
@@ -87,6 +102,7 @@ const Header = ({ openModal }) => {
           
           {/* Mobile Menu Button */}
           <button 
+            type="button"
             className="md:hidden text-dark-800" 
             onClick={toggleMobileMenu}
             aria-label="Toggle mobile menu"
@@ -131,6 +147,20 @@ const Header = ({ openModal }) => {
               >
                 Past Sessions
               </Link>
+              {isAdmin && (
+                <Link 
+                  to="/admin" 
+                  className={`text-[13px] font-medium ${
+                    location.pathname === '/admin' ? 'text-dark-900' : 'text-dark-500'
+                  }`}
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  <div className="flex items-center gap-1">
+                    <FiSettings size={14} />
+                    <span>Admin</span>
+                  </div>
+                </Link>
+              )}
               <motion.button
                 onClick={() => {
                   setIsMobileMenuOpen(false)

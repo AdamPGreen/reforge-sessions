@@ -12,21 +12,30 @@ const sessionTypes = [
 
 const SubmissionModal = ({ isOpen, onClose }) => {
   const [sessionType, setSessionType] = useState('internal')
-  const { createSession, submitVolunteer } = useSession()
+  const { createSession, submitVolunteer, submitTopic } = useSession()
   
   const { register, handleSubmit, reset, formState: { errors } } = useForm()
   
-  const onSubmit = (data) => {
-    if (sessionType === 'topic') {
-      createSession(data)
-    } else {
-      submitVolunteer({
-        ...data,
-        calendarLink: 'https://calendar.google.com/calendar/event?eid=placeholder'
-      })
+  const onSubmit = async (data) => {
+    try {
+      if (sessionType === 'topic') {
+        await submitTopic({
+          title: data.title,
+          description: data.description,
+          votes: 0
+        })
+      } else {
+        await submitVolunteer({
+          ...data,
+          calendar_link: 'https://calendar.google.com/calendar/event?eid=placeholder'
+        })
+      }
+      reset()
+      onClose()
+    } catch (error) {
+      console.error('Error submitting:', error)
+      // You might want to show an error message to the user here
     }
-    reset()
-    onClose()
   }
 
   if (!isOpen) return null

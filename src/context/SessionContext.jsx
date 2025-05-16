@@ -35,7 +35,25 @@ export function SessionProvider({ children }) {
           console.error('[SessionContext] Error checking admin status:', error)
           return
         }
-        const adminStatus = user?.email?.endsWith('@reforge.com') || false
+
+        if (!user) {
+          setIsAdmin(false)
+          return
+        }
+
+        // Check if user is in admin_users table
+        const { data: adminData, error: adminError } = await supabase
+          .from('admin_users')
+          .select('id')
+          .eq('user_id', user.id)
+          .single()
+
+        if (adminError && adminError.code !== 'PGRST116') { // PGRST116 is "no rows returned"
+          console.error('[SessionContext] Error checking admin_users:', adminError)
+          return
+        }
+
+        const adminStatus = !!adminData
         console.log('[SessionContext] Admin check:', {
           userEmail: user?.email,
           isAdmin: adminStatus,
@@ -211,6 +229,11 @@ export function SessionProvider({ children }) {
   }
 
   const deleteTopic = async (topicId) => {
+    if (!isAdmin) {
+      console.error('Only admins can delete topics')
+      return false
+    }
+
     const { error } = await supabase
       .from('topics')
       .delete()
@@ -229,12 +252,58 @@ export function SessionProvider({ children }) {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
 
-    const { error } = await supabase
-      .from('topics')
-      .insert([{ ...newTopic, user_id: user.id }])
+    try {
+      const { error } = await supabase
+        .from('topics')
+        .insert([{ 
+          ...newTopic,
+          user_id: user.id,
+          votes: 0
+        }])
 
-    if (error) throw error
-    
+      if (error) {
+        console.error('[SessionContext] Error submitting topic:', error)
+        throw error
+      }
+      
+      await loadTopics()
+    } catch (err) {
+      console.error('[SessionContext] Unexpected error submitting topic:', err)
+      throw err
+    }
+  }
+
+  const submitVolunteer = async (volunteerData) => {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+
+    // First create the volunteer entry
+    const { error: volunteerError } = await supabase
+      .from('volunteers')
+      .insert([{ 
+        speaker: volunteerData.speaker,
+        title: volunteerData.title,
+        description: volunteerData.description,
+        calendar_link: volunteerData.calendar_link,
+        user_id: user.id,
+        is_external_expert: volunteerData.isExternalExpert || false 
+      }])
+
+    if (volunteerError) throw volunteerError
+
+    // Then create a corresponding topic for voting
+    const { error: topicError } = await supabase
+      .from('topics')
+      .insert([{
+        title: volunteerData.title,
+        description: `${volunteerData.description}\n\nSpeaker: ${volunteerData.speaker}${volunteerData.isExternalExpert ? ' (External Expert)' : ''}`,
+        user_id: user.id,
+        votes: 0
+      }])
+
+    if (topicError) throw topicError
+
+    // Reload topics to show the new entry
     await loadTopics()
   }
 
@@ -251,7 +320,8 @@ export function SessionProvider({ children }) {
     submitTopic,
     createSession,
     updateTopic,
-    deleteTopic
+    deleteTopic,
+    submitVolunteer
   }
 
   return (

@@ -25,6 +25,40 @@ const AuthCallback = () => {
           return
         }
 
+        // Check for code in URL (PKCE flow)
+        const code = urlParams.get('code')
+        if (code) {
+          console.log('Auth code found in URL, waiting for Supabase to handle PKCE flow')
+          
+          // Wait for session to be established
+          setTimeout(async () => {
+            if (!mounted) return;
+            
+            const { data, error: getSessionError } = await supabase.auth.getSession()
+            
+            if (getSessionError) {
+              console.error('Error getting session after code exchange:', getSessionError)
+              navigate(`/login?error=${encodeURIComponent(getSessionError.message)}`)
+              return
+            }
+            
+            if (data?.session) {
+              console.log('Session established via PKCE:', {
+                user: {
+                  email: data.session.user.email,
+                  id: data.session.user.id
+                }
+              })
+              navigate('/')
+            } else {
+              console.error('No session found after code exchange')
+              navigate('/login?error=Failed%20to%20establish%20session')
+            }
+          }, 2000) // Give Supabase client time to process the code
+          
+          return
+        }
+
         // Try to get session from URL hash fragment
         if (window.location.hash) {
           console.log('Hash fragment found:', {

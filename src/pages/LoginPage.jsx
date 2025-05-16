@@ -61,7 +61,7 @@ const LoginPage = () => {
       >
         <div className="text-center mb-8">
           <img 
-            src="https://cltgdzmxfnyhdzdiuomy.supabase.co/storage/v1/object/public/app-assets//Reforge%20Logo%20Variants.png" 
+            src="https://mighkvgbmismttqlwfsy.supabase.co/storage/v1/object/public/app-assets//Reforge%20Logo%20Variants.png" 
             alt="Reforge" 
             className="h-6 mx-auto mb-6" 
           />

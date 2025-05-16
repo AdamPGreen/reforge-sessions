@@ -258,6 +258,8 @@ export function SessionProvider({ children }) {
         .insert([{ 
           ...newTopic,
           user_id: user.id,
+          user_email: user.email,
+          user_name: user.user_metadata?.full_name || user.email,
           votes: 0
         }])
 
@@ -298,6 +300,8 @@ export function SessionProvider({ children }) {
         title: volunteerData.title,
         description: `${volunteerData.description}\n\nSpeaker: ${volunteerData.speaker}${volunteerData.isExternalExpert ? ' (External Expert)' : ''}`,
         user_id: user.id,
+        user_email: user.email,
+        user_name: user.user_metadata?.full_name || user.email,
         votes: 0
       }])
 

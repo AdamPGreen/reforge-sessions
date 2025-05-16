@@ -28,7 +28,9 @@ const Footer = () => {
               Reforge
             </a>
             <a 
-              href="#" 
+              href="https://github.com/AdamPGreen/reforge-sessions" 
+              target="_blank" 
+              rel="noopener noreferrer"
               className="text-dark-600 hover:text-primary-600 transition-colors flex items-center gap-1"
             >
               <FiGithub />

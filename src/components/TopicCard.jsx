@@ -71,20 +71,22 @@ const TopicCard = ({ topic }) => {
                 className="w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
               />
               <div className="flex gap-2">
-                <button
+                <motion.button
+                  type="button"
                   onClick={handleEdit}
                   className="inline-flex items-center gap-1 px-3 py-1 text-sm font-medium text-white bg-primary-600 rounded-md hover:bg-primary-700"
                 >
                   <FiCheck size={14} />
                   Save
-                </button>
-                <button
+                </motion.button>
+                <motion.button
+                  type="button"
                   onClick={handleCancel}
                   className="inline-flex items-center gap-1 px-3 py-1 text-sm font-medium text-dark-600 bg-light-100 rounded-md hover:bg-light-200"
                 >
                   <FiX size={14} />
                   Cancel
-                </button>
+                </motion.button>
               </div>
             </div>
           ) : (
@@ -92,7 +94,7 @@ const TopicCard = ({ topic }) => {
               <h3 className="text-lg font-semibold mb-1 text-dark-900">{topic.title}</h3>
               <div className="flex items-center gap-1 text-sm text-dark-500 mb-2">
                 <FiUser size={14} />
-                <span>Suggested by {topic.user_email || 'Anonymous'}</span>
+                <span>Suggested by {topic.user_name || 'Anonymous'}</span>
               </div>
               <p className="text-dark-700 text-sm">{topic.description}</p>
             </>
@@ -101,6 +103,7 @@ const TopicCard = ({ topic }) => {
         
         <div className="flex flex-col gap-2">
           <motion.button
+            type="button"
             onClick={handleVote}
             className={`flex flex-col items-center justify-center min-w-[60px] p-2 rounded-md transition-colors ${
               hasVoted ? 'bg-primary-100 text-primary-700' : 'bg-light-100 text-dark-500 hover:bg-light-200'
@@ -126,18 +129,20 @@ const TopicCard = ({ topic }) => {
 
           {isAdmin && !isEditing && (
             <div className="flex flex-col gap-1">
-              <button
+              <motion.button
+                type="button"
                 onClick={() => setIsEditing(true)}
                 className="flex items-center justify-center p-2 text-dark-500 hover:text-dark-700 transition-colors"
               >
                 <FiEdit2 size={16} />
-              </button>
-              <button
+              </motion.button>
+              <motion.button
+                type="button"
                 onClick={handleDelete}
                 className="flex items-center justify-center p-2 text-red-500 hover:text-red-700 transition-colors"
               >
                 <FiTrash2 size={16} />
-              </button>
+              </motion.button>
             </div>
           )}
         </div>

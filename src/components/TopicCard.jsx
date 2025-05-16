@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { FiThumbsUp, FiEdit2, FiTrash2, FiCheck, FiX, FiUser } from 'react-icons/fi'
 import { useSession } from '../context/SessionContext'
@@ -7,23 +7,13 @@ import { useAuth } from '../context/AuthContext'
 const TopicCard = ({ topic }) => {
   const { voteForTopic, isVoted, updateTopic, deleteTopic, isAdmin } = useSession()
   const { user } = useAuth()
-  const [hasVoted, setHasVoted] = useState(isVoted(topic.id))
-  const [votes, setVotes] = useState(topic.votes)
   const [isEditing, setIsEditing] = useState(false)
   const [editedTitle, setEditedTitle] = useState(topic.title)
   const [editedDescription, setEditedDescription] = useState(topic.description)
   
-  const handleVote = () => {
+  const handleVote = async () => {
     if (!user) return
-    voteForTopic(topic.id)
-    
-    if (hasVoted) {
-      setVotes(prev => prev - 1)
-    } else {
-      setVotes(prev => prev + 1)
-    }
-    
-    setHasVoted(!hasVoted)
+    await voteForTopic(topic.id)
   }
 
   const handleEdit = async () => {
@@ -106,19 +96,19 @@ const TopicCard = ({ topic }) => {
             type="button"
             onClick={handleVote}
             className={`flex flex-col items-center justify-center min-w-[60px] p-2 rounded-md transition-colors ${
-              hasVoted ? 'bg-primary-100 text-primary-700' : 'bg-light-100 text-dark-500 hover:bg-light-200'
+              isVoted(topic.id) ? 'bg-primary-100 text-primary-700' : 'bg-light-100 text-dark-500 hover:bg-light-200'
             }`}
             whileTap={{ scale: 0.95 }}
           >
             <AnimatePresence mode="popLayout">
               <motion.span
-                key={votes}
+                key={topic.votes}
                 initial={{ y: -8, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 exit={{ y: 8, opacity: 0 }}
                 className="font-bold"
               >
-                {votes}
+                {topic.votes}
               </motion.span>
             </AnimatePresence>
             <div className="flex items-center gap-1 text-sm">

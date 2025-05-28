@@ -6,25 +6,20 @@ import Footer from '../components/Footer'
 import { useSession } from '../context/SessionContext'
 import { useAuth } from '../context/AuthContext'
 import { supabase } from '../lib/supabase'
-import { FiArrowLeft, FiCalendar, FiUsers, FiThumbsUp, FiUserPlus, FiUserMinus, FiSearch } from 'react-icons/fi'
+import { FiArrowLeft, FiCalendar, FiUsers, FiThumbsUp, FiUserPlus, FiUserMinus, FiSearch, FiPlus } from 'react-icons/fi'
 import { Link } from 'react-router-dom'
+import CreateSessionModal from '../components/CreateSessionModal'
 
 const AdminPage = ({ openModal }) => {
   const navigate = useNavigate()
   const { createSession, isAdmin, topics } = useSession()
   const { user } = useAuth()
-  const [formData, setFormData] = useState({
-    title: '',
-    description: '',
-    date: '',
-    speaker: '',
-    calendarLink: ''
-  })
-  const [selectedTopic, setSelectedTopic] = useState(null)
   const [adminUsers, setAdminUsers] = useState([])
   const [searchEmail, setSearchEmail] = useState('')
   const [searchResults, setSearchResults] = useState([])
   const [isSearching, setIsSearching] = useState(false)
+  const [isCreateSessionModalOpen, setIsCreateSessionModalOpen] = useState(false)
+  const [selectedTopic, setSelectedTopic] = useState(null)
 
   useEffect(() => {
     if (!isAdmin) {
@@ -113,28 +108,9 @@ const AdminPage = ({ openModal }) => {
     }
   }
 
-  const handleSubmit = async (e) => {
-    e.preventDefault()
-    await createSession(formData)
-    navigate('/')
-  }
-
-  const handleChange = (e) => {
-    setFormData(prev => ({
-      ...prev,
-      [e.target.name]: e.target.value
-    }))
-  }
-
-  const handleTopicSelect = (topic) => {
+  const handleCreateSession = (topic = null) => {
     setSelectedTopic(topic)
-    setFormData({
-      title: topic.title,
-      description: topic.description,
-      date: '',
-      speaker: '',
-      calendarLink: ''
-    })
+    setIsCreateSessionModalOpen(true)
   }
 
   return (
@@ -154,6 +130,55 @@ const AdminPage = ({ openModal }) => {
           </div>
 
           <div className="grid gap-8">
+            {/* Topics Section */}
+            <div className="bg-white rounded-xl shadow-sm p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xl font-semibold text-dark-900">Create Sessions from Topics</h2>
+                <motion.button
+                  type="button"
+                  onClick={() => handleCreateSession()}
+                  className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary-600 text-white font-medium shadow-md hover:bg-primary-700 transition-colors"
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  <FiPlus size={18} />
+                  <span>Create Custom Session</span>
+                </motion.button>
+              </div>
+
+              <div className="grid gap-4">
+                {topics.map((topic) => (
+                  <motion.div
+                    key={topic.id}
+                    className="flex items-start justify-between p-4 bg-light-50 rounded-lg border border-light-200"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                  >
+                    <div className="flex-1">
+                      <h3 className="text-lg font-semibold text-dark-900 mb-1">{topic.title}</h3>
+                      <p className="text-sm text-dark-500 mb-2">Suggested by {topic.user_name}</p>
+                      <p className="text-dark-700 text-sm">{topic.description}</p>
+                      <div className="flex items-center gap-2 mt-2">
+                        <span className="flex items-center gap-1 text-sm text-dark-500">
+                          <FiThumbsUp size={14} />
+                          {topic.votes} votes
+                        </span>
+                      </div>
+                    </div>
+                    <motion.button
+                      type="button"
+                      onClick={() => handleCreateSession(topic)}
+                      className="ml-4 px-4 py-2 rounded-lg border-2 border-primary-600 text-primary-600 font-medium hover:bg-primary-50 transition-colors"
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                    >
+                      Create Session
+                    </motion.button>
+                  </motion.div>
+                ))}
+              </div>
+            </div>
+
             {/* Admin Users Section */}
             <div className="bg-white rounded-xl shadow-sm p-6">
               <h2 className="text-xl font-semibold text-dark-900 mb-6">Manage Admins</h2>
@@ -223,102 +248,20 @@ const AdminPage = ({ openModal }) => {
                 ))}
               </div>
             </div>
-
-            {/* Existing Session Creation Section */}
-            <div className="bg-white rounded-xl shadow-sm p-6">
-              <h2 className="text-xl font-semibold text-dark-900 mb-6">Create Session</h2>
-              
-              <form onSubmit={handleSubmit} className="space-y-6">
-                <div>
-                  <label htmlFor="title" className="block text-sm font-medium text-dark-700 mb-1">
-                    Session Title
-                  </label>
-                  <input
-                    id="title"
-                    type="text"
-                    name="title"
-                    value={formData.title}
-                    onChange={handleChange}
-                    required
-                    className="w-full px-4 py-2 rounded-lg border border-light-300 focus:outline-none focus:ring-2 focus:ring-primary-500"
-                  />
-                </div>
-
-                <div>
-                  <label htmlFor="description" className="block text-sm font-medium text-dark-700 mb-1">
-                    Description
-                  </label>
-                  <textarea
-                    id="description"
-                    name="description"
-                    value={formData.description}
-                    onChange={handleChange}
-                    required
-                    rows={4}
-                    className="w-full px-4 py-2 rounded-lg border border-light-300 focus:outline-none focus:ring-2 focus:ring-primary-500"
-                  />
-                </div>
-
-                <div>
-                  <label htmlFor="speaker" className="block text-sm font-medium text-dark-700 mb-1">
-                    Speaker
-                  </label>
-                  <input
-                    id="speaker"
-                    type="text"
-                    name="speaker"
-                    value={formData.speaker}
-                    onChange={handleChange}
-                    required
-                    className="w-full px-4 py-2 rounded-lg border border-light-300 focus:outline-none focus:ring-2 focus:ring-primary-500"
-                  />
-                </div>
-
-                <div>
-                  <label htmlFor="date" className="block text-sm font-medium text-dark-700 mb-1">
-                    Date and Time
-                  </label>
-                  <input
-                    id="date"
-                    type="datetime-local"
-                    name="date"
-                    value={formData.date}
-                    onChange={handleChange}
-                    required
-                    className="w-full px-4 py-2 rounded-lg border border-light-300 focus:outline-none focus:ring-2 focus:ring-primary-500"
-                  />
-                </div>
-
-                <div>
-                  <label htmlFor="calendarLink" className="block text-sm font-medium text-dark-700 mb-1">
-                    Calendar Link
-                  </label>
-                  <input
-                    id="calendarLink"
-                    type="url"
-                    name="calendarLink"
-                    value={formData.calendarLink}
-                    onChange={handleChange}
-                    required
-                    className="w-full px-4 py-2 rounded-lg border border-light-300 focus:outline-none focus:ring-2 focus:ring-primary-500"
-                  />
-                </div>
-
-                <motion.button
-                  type="submit"
-                  className="w-full py-3 rounded-lg bg-primary-600 text-white font-medium shadow-md hover:bg-primary-700 transition-colors"
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                >
-                  Create Session
-                </motion.button>
-              </form>
-            </div>
           </div>
         </div>
       </main>
       
       <Footer />
+
+      <CreateSessionModal
+        isOpen={isCreateSessionModalOpen}
+        onClose={() => {
+          setIsCreateSessionModalOpen(false)
+          setSelectedTopic(null)
+        }}
+        topic={selectedTopic}
+      />
     </div>
   )
 }

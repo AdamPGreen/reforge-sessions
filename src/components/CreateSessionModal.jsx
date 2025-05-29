@@ -28,7 +28,11 @@ const CreateSessionModal = ({ isOpen, onClose, topic = null }) => {
 
   const onSubmit = async (data) => {
     try {
-      await createSession(data)
+      const sessionData = {
+        ...data,
+        topic_id: topic?.id // Include topic_id if this is being created from a topic
+      }
+      await createSession(sessionData)
       reset()
       onClose()
     } catch (error) {

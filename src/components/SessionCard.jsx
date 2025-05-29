@@ -66,7 +66,7 @@ const SessionCard = ({ session, isPast = false }) => {
             </div>
           ) : (
             <a 
-              href={session.calendarLink} 
+              href={session.calendar_link} 
               target="_blank" 
               rel="noopener noreferrer"
               className="inline-flex items-center gap-1 text-sm font-medium text-primary-600 hover:text-primary-700 transition-colors"

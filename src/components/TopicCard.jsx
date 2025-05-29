@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { FiThumbsUp, FiEdit2, FiTrash2, FiCheck, FiX, FiUser } from 'react-icons/fi'
+import { FiThumbsUp, FiEdit2, FiTrash2, FiCheck, FiX, FiUser, FiCalendar } from 'react-icons/fi'
 import { useSession } from '../context/SessionContext'
 import { useAuth } from '../context/AuthContext'
 
@@ -47,7 +47,9 @@ const TopicCard = ({ topic }) => {
   
   return (
     <motion.div 
-      className="bg-white rounded-xl shadow-card p-5 transition-all border border-light-200"
+      className={`bg-white rounded-xl shadow-card p-5 transition-all border ${
+        topic.session_id ? 'border-primary-200 bg-primary-50' : 'border-light-200'
+      }`}
       whileHover={{ y: -2 }}
       layout
     >
@@ -94,38 +96,46 @@ const TopicCard = ({ topic }) => {
                 <span>Suggested by {topic.user_name || 'Anonymous'}</span>
               </div>
               <p className="text-dark-700 text-sm">{topic.description}</p>
+              {topic.session_id && (
+                <div className="mt-2 inline-flex items-center gap-1 px-2 py-1 bg-primary-100 text-primary-700 rounded-md text-sm">
+                  <FiCalendar size={14} />
+                  <span>Converted to Session</span>
+                </div>
+              )}
             </>
           )}
         </div>
         
         <div className="flex flex-col gap-2">
-          <motion.button
-            type="button"
-            onClick={handleVote}
-            disabled={!user || isVoting}
-            className={`flex flex-col items-center justify-center min-w-[60px] p-2 rounded-md transition-colors ${
-              isVoted(topic.id) 
-                ? 'bg-primary-100 text-primary-700' 
-                : 'bg-light-100 text-dark-500 hover:bg-light-200'
-            } ${(!user || isVoting) ? 'opacity-50 cursor-not-allowed' : ''}`}
-            whileTap={{ scale: 0.95 }}
-          >
-            <AnimatePresence mode="popLayout">
-              <motion.span
-                key={topic.votes}
-                initial={{ y: -8, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                exit={{ y: 8, opacity: 0 }}
-                className="font-bold"
-              >
-                {topic.votes}
-              </motion.span>
-            </AnimatePresence>
-            <div className="flex items-center gap-1 text-sm">
-              <FiThumbsUp size={14} />
-              <span>Votes</span>
-            </div>
-          </motion.button>
+          {!topic.session_id && (
+            <motion.button
+              type="button"
+              onClick={handleVote}
+              disabled={!user || isVoting}
+              className={`flex flex-col items-center justify-center min-w-[60px] p-2 rounded-md transition-colors ${
+                isVoted(topic.id) 
+                  ? 'bg-primary-100 text-primary-700' 
+                  : 'bg-light-100 text-dark-500 hover:bg-light-200'
+              } ${(!user || isVoting) ? 'opacity-50 cursor-not-allowed' : ''}`}
+              whileTap={{ scale: 0.95 }}
+            >
+              <AnimatePresence mode="popLayout">
+                <motion.span
+                  key={topic.votes}
+                  initial={{ y: -8, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  exit={{ y: 8, opacity: 0 }}
+                  className="font-bold"
+                >
+                  {topic.votes}
+                </motion.span>
+              </AnimatePresence>
+              <div className="flex items-center gap-1 text-sm">
+                <FiThumbsUp size={14} />
+                <span>Votes</span>
+              </div>
+            </motion.button>
+          )}
 
           {isAdmin && !isEditing && (
             <div className="flex flex-col gap-1">

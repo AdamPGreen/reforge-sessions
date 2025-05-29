@@ -206,13 +206,32 @@ export function SessionProvider({ children }) {
   }
 
   const createSession = async (sessionData) => {
-    const { error } = await supabase
-      .from('sessions')
-      .insert([sessionData])
+    try {
+      // Start a transaction
+      const { data: session, error: sessionError } = await supabase
+        .from('sessions')
+        .insert([sessionData])
+        .select()
+        .single()
 
-    if (error) throw error
-    
-    await loadSessions()
+      if (sessionError) throw sessionError
+
+      // If this session was created from a topic, update the topic
+      if (sessionData.topic_id) {
+        const { error: topicError } = await supabase
+          .from('topics')
+          .update({ session_id: session.id })
+          .eq('id', sessionData.topic_id)
+
+        if (topicError) throw topicError
+      }
+      
+      await loadSessions()
+      await loadTopics() // Reload topics to reflect the change
+    } catch (error) {
+      console.error('Error creating session:', error)
+      throw error
+    }
   }
 
   const isVoted = (topicId) => {

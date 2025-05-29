@@ -176,7 +176,7 @@ export function SessionProvider({ children }) {
       // Remove topic_id from session data
       const { topic_id, ...sessionDataWithoutTopicId } = sessionData
       
-      // Start a transaction
+      // Create the session
       const { data: session, error: sessionError } = await supabase
         .from('sessions')
         .insert([sessionDataWithoutTopicId])
@@ -184,6 +184,16 @@ export function SessionProvider({ children }) {
         .single()
 
       if (sessionError) throw sessionError
+
+      // If this session was created from a topic, delete the topic
+      if (topic_id) {
+        const { error: topicError } = await supabase
+          .from('topics')
+          .delete()
+          .eq('id', topic_id)
+
+        if (topicError) throw topicError
+      }
       
       await loadSessions()
       await loadTopics() // Reload topics to reflect the change

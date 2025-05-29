@@ -45,7 +45,8 @@ const CreateSessionModal = ({ isOpen, onClose, topic = null }) => {
         description: data.description,
         speaker: data.speaker,
         date: utcDate.toISOString(),
-        calendar_link: data.calendar_link
+        calendar_link: data.calendar_link,
+        topic_id: topic?.id
       }
       await createSession(sessionData)
       reset()

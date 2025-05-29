@@ -13,7 +13,7 @@ const VotingPage = ({ openModal }) => {
   const [sortBy, setSortBy] = useState('votes')
   
   const filteredTopics = topics.filter(topic => 
-    !topic.session_id && (
+    topic.status === 'active' && (
       topic.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       topic.description.toLowerCase().includes(searchTerm.toLowerCase())
     )

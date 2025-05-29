@@ -147,7 +147,7 @@ const AdminPage = ({ openModal }) => {
               </div>
 
               <div className="grid gap-4">
-                {topics.map((topic) => (
+                {topics.filter(topic => topic.status === 'active').map((topic) => (
                   <motion.div
                     key={topic.id}
                     className="flex items-start justify-between p-4 bg-light-50 rounded-lg border border-light-200"
@@ -162,6 +162,10 @@ const AdminPage = ({ openModal }) => {
                         <span className="flex items-center gap-1 text-sm text-dark-500">
                           <FiThumbsUp size={14} />
                           {topic.votes} votes
+                        </span>
+                        <span className="flex items-center gap-1 text-sm text-dark-500">
+                          <FiCalendar size={14} />
+                          {topic.status === 'converted' ? 'Converted to Session' : 'Active'}
                         </span>
                       </div>
                     </div>

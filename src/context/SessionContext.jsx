@@ -60,33 +60,33 @@ export function SessionProvider({ children }) {
       stack: new Error().stack
     })
     try {
-      const { data, error } = await supabase
+      // First get all topics
+      const { data: topicsData, error: topicsError } = await supabase
         .from('topics')
-        .select(`
-          *,
-          votes:votes(count)
-        `)
-        .order('votes', { ascending: false })
+        .select('*')
+        .order('created_at', { ascending: false })
 
-      if (error) {
-        console.error('[SessionContext] Error loading topics:', error)
-        throw error
-      }
+      if (topicsError) throw topicsError
 
-      if (data) {
-        // Transform the data to include the vote count
-        const topicsWithVotes = data.map(topic => ({
-          ...topic,
-          votes: topic.votes?.[0]?.count || 0
-        }))
+      // Then get vote counts
+      const { data: voteCounts, error: voteCountsError } = await supabase
+        .from('topic_vote_counts')
+        .select('*')
 
-        console.log('[SessionContext] Topics loaded:', {
-          count: topicsWithVotes.length,
-          timestamp: Date.now(),
-          stack: new Error().stack
-        })
-        setTopics(topicsWithVotes)
-      }
+      if (voteCountsError) throw voteCountsError
+
+      // Combine the data
+      const topicsWithVotes = topicsData.map(topic => ({
+        ...topic,
+        votes: voteCounts.find(vc => vc.topic_id === topic.id)?.vote_count || 0
+      }))
+
+      console.log('[SessionContext] Topics loaded:', {
+        count: topicsWithVotes.length,
+        timestamp: Date.now(),
+        stack: new Error().stack
+      })
+      setTopics(topicsWithVotes)
     } catch (err) {
       console.error('[SessionContext] Unexpected error loading topics:', err)
       throw err
@@ -185,11 +185,11 @@ export function SessionProvider({ children }) {
 
       if (sessionError) throw sessionError
 
-      // If this session was created from a topic, delete the topic
+      // If this session was created from a topic, update its status to converted
       if (topic_id) {
         const { error: topicError } = await supabase
           .from('topics')
-          .delete()
+          .update({ status: 'converted' })
           .eq('id', topic_id)
 
         if (topicError) throw topicError
@@ -272,25 +272,14 @@ export function SessionProvider({ children }) {
     }
 
     try {
-      // First delete all votes associated with this topic
-      const { error: votesError } = await supabase
-        .from('votes')
-        .delete()
-        .eq('topic_id', topicId)
-
-      if (votesError) {
-        console.error('Error deleting votes:', votesError)
-        return false
-      }
-
-      // Then delete the topic
+      // Update topic status to archived instead of deleting
       const { error: topicError } = await supabase
         .from('topics')
-        .delete()
+        .update({ status: 'archived' })
         .eq('id', topicId)
 
       if (topicError) {
-        console.error('Error deleting topic:', topicError)
+        console.error('Error archiving topic:', topicError)
         return false
       }
 

@@ -13,16 +13,17 @@ const VotingPage = ({ openModal }) => {
   const [sortBy, setSortBy] = useState('votes')
   
   const filteredTopics = topics.filter(topic => 
-    topic.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    topic.description.toLowerCase().includes(searchTerm.toLowerCase())
+    !topic.session_id && (
+      topic.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      topic.description.toLowerCase().includes(searchTerm.toLowerCase())
+    )
   )
   
   const sortedTopics = [...filteredTopics].sort((a, b) => {
     if (sortBy === 'votes') {
       return b.votes - a.votes
-    } else {
-      return b.id.localeCompare(a.id)
     }
+    return b.id.localeCompare(a.id)
   })
   
   return (
@@ -103,7 +104,11 @@ const VotingPage = ({ openModal }) => {
               
               {sortedTopics.length === 0 && (
                 <div className="text-center py-12">
-                  <p className="text-dark-600 text-lg">No topics found. Try a different search term.</p>
+                  <p className="text-dark-600 text-lg">
+                    {searchTerm 
+                      ? "No topics found. Try a different search term."
+                      : "No topics available for voting. All topics have been converted to sessions."}
+                  </p>
                 </div>
               )}
             </motion.div>

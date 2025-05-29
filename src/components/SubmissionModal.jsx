@@ -22,8 +22,7 @@ const SubmissionModal = ({ isOpen, onClose }) => {
         description: data.description,
         speaker: data.speaker || null,
         is_external: sessionType === 'expert',
-        knows_expert: data.knows_expert || false,
-        votes: 0
+        knows_expert: data.knows_expert || false
       })
       reset()
       onClose()

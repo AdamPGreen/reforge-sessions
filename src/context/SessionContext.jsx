@@ -173,24 +173,17 @@ export function SessionProvider({ children }) {
 
   const createSession = async (sessionData) => {
     try {
+      // Remove topic_id from session data
+      const { topic_id, ...sessionDataWithoutTopicId } = sessionData
+      
       // Start a transaction
       const { data: session, error: sessionError } = await supabase
         .from('sessions')
-        .insert([sessionData])
+        .insert([sessionDataWithoutTopicId])
         .select()
         .single()
 
       if (sessionError) throw sessionError
-
-      // If this session was created from a topic, update the topic
-      if (sessionData.topic_id) {
-        const { error: topicError } = await supabase
-          .from('topics')
-          .update({ session_id: session.id })
-          .eq('id', sessionData.topic_id)
-
-        if (topicError) throw topicError
-      }
       
       await loadSessions()
       await loadTopics() // Reload topics to reflect the change
@@ -290,7 +283,11 @@ export function SessionProvider({ children }) {
       const { error } = await supabase
         .from('topics')
         .insert([{ 
-          ...newTopic,
+          title: newTopic.title,
+          description: newTopic.description,
+          speaker: newTopic.speaker,
+          is_external: newTopic.is_external,
+          knows_expert: newTopic.knows_expert,
           user_id: user.id,
           user_email: user.email,
           user_name: user.user_metadata?.full_name || user.email

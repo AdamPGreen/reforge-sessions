@@ -3,11 +3,14 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { FiX } from 'react-icons/fi'
 import { useForm } from 'react-hook-form'
 import { useSession } from '../context/SessionContext'
+import DatePicker from 'react-datepicker'
+import 'react-datepicker/dist/react-datepicker.css'
 
 const CreateSessionModal = ({ isOpen, onClose, topic = null }) => {
   const { createSession } = useSession()
   const { register, handleSubmit, reset, setValue, formState: { errors } } = useForm()
   const [userTimezone, setUserTimezone] = useState('')
+  const [selectedDate, setSelectedDate] = useState(null)
 
   useEffect(() => {
     // Get user's timezone
@@ -19,32 +22,34 @@ const CreateSessionModal = ({ isOpen, onClose, topic = null }) => {
     if (topic) {
       setValue('title', topic.title)
       setValue('description', topic.description)
-      setValue('speaker', topic.user_name || 'TBD')
-      setValue('date', '')
+      setValue('speaker', topic.speaker || topic.user_name || 'TBD')
       setValue('calendar_link', '')
+      setSelectedDate(null)
     } else {
       // Reset form for custom session
       setValue('title', '')
       setValue('description', '')
       setValue('speaker', '')
-      setValue('date', '')
       setValue('calendar_link', '')
+      setSelectedDate(null)
     }
   }, [topic, setValue])
 
   const onSubmit = async (data) => {
     try {
-      // Convert the local datetime to UTC before saving
-      const localDate = new Date(data.date)
-      const utcDate = new Date(localDate.getTime() - localDate.getTimezoneOffset() * 60000)
-      
+      if (!selectedDate) throw new Error('Date is required')
+      // Convert to UTC ISO string
+      const utcDate = new Date(selectedDate.getTime() - selectedDate.getTimezoneOffset() * 60000)
       const sessionData = {
-        ...data,
+        title: data.title,
+        description: data.description,
+        speaker: data.speaker,
         date: utcDate.toISOString(),
-        topic_id: topic?.id // Include topic_id if this is being created from a topic
+        calendar_link: data.calendar_link
       }
       await createSession(sessionData)
       reset()
+      setSelectedDate(null)
       onClose()
     } catch (error) {
       console.error('Error creating session:', error)
@@ -136,18 +141,24 @@ const CreateSessionModal = ({ isOpen, onClose, topic = null }) => {
                     <label htmlFor="date" className="block text-sm font-medium text-dark-700 mb-1">
                       Date and Time ({userTimezone})
                     </label>
-                    <input
+                    <DatePicker
                       id="date"
-                      type="datetime-local"
-                      step="900"
-                      {...register('date', { required: 'Date is required' })}
+                      selected={selectedDate}
+                      onChange={date => setSelectedDate(date)}
+                      showTimeSelect
+                      timeIntervals={15}
+                      dateFormat="Pp"
+                      minDate={new Date()}
+                      placeholderText="Select date and time"
                       className="w-full px-4 py-2 rounded-lg border border-light-300 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                      popperClassName="z-[200]"
+                      required
                     />
-                    {errors.date && (
-                      <p className="text-red-500 text-sm mt-1">{errors.date.message}</p>
+                    {!selectedDate && (
+                      <p className="text-red-500 text-sm mt-1">Date is required</p>
                     )}
                     <p className="text-sm text-dark-500 mt-1">
-                      Times are shown in your local timezone ({userTimezone})
+                      Times are shown in your local timezone ({userTimezone}) and must be in 15-minute intervals
                     </p>
                   </div>
 

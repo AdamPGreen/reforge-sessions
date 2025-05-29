@@ -47,9 +47,7 @@ const TopicCard = ({ topic }) => {
   
   return (
     <motion.div 
-      className={`bg-white rounded-xl shadow-card p-5 transition-all border ${
-        topic.session_id ? 'border-primary-200 bg-primary-50' : 'border-light-200'
-      }`}
+      className="bg-white rounded-xl shadow-card p-5 transition-all border border-light-200"
       whileHover={{ y: -2 }}
       layout
     >
@@ -91,6 +89,10 @@ const TopicCard = ({ topic }) => {
           ) : (
             <>
               <h3 className="text-lg font-semibold mb-1 text-dark-900">{topic.title}</h3>
+              <div className="flex items-center gap-1 text-sm text-dark-500 mb-2">
+                <FiUser size={14} />
+                <span>Speaker: {topic.speaker || 'TBD'}</span>
+              </div>
               <div className="flex items-center gap-1 text-sm text-dark-500 mb-2">
                 <FiUser size={14} />
                 <span>Suggested by {topic.user_name || 'Anonymous'}</span>

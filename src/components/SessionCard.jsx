@@ -3,6 +3,8 @@ import { motion } from 'framer-motion'
 import { FiCalendar, FiVideo, FiFileText, FiUser, FiPlus, FiEdit2 } from 'react-icons/fi'
 import { useSession } from '../context/SessionContext'
 import EditSessionModal from './EditSessionModal'
+import DatePicker from 'react-datepicker'
+import 'react-datepicker/dist/react-datepicker.css'
 
 const formatDate = (dateString) => {
   const date = new Date(dateString)
@@ -24,6 +26,7 @@ const formatDate = (dateString) => {
 const SessionCard = ({ session, isPast = false }) => {
   const { isAdmin } = useSession()
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+  const [userTimezone] = useState(Intl.DateTimeFormat().resolvedOptions().timeZone)
 
   return (
     <>
@@ -57,6 +60,7 @@ const SessionCard = ({ session, isPast = false }) => {
             <div className="flex items-center gap-1 text-sm text-dark-600 mb-4">
               <FiCalendar size={16} className="text-dark-900" />
               <time>{formatDate(session.date)}</time>
+              <span className="text-dark-400">({userTimezone})</span>
             </div>
             
             <p className="text-dark-700">{session.description}</p>

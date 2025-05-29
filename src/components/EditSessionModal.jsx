@@ -4,8 +4,8 @@ import { FiX } from 'react-icons/fi'
 import { useForm } from 'react-hook-form'
 import { useSession } from '../context/SessionContext'
 
-const CreateSessionModal = ({ isOpen, onClose, topic = null }) => {
-  const { createSession } = useSession()
+const EditSessionModal = ({ isOpen, onClose, session }) => {
+  const { updateSession } = useSession()
   const { register, handleSubmit, reset, setValue, formState: { errors } } = useForm()
   const [userTimezone, setUserTimezone] = useState('')
 
@@ -14,23 +14,21 @@ const CreateSessionModal = ({ isOpen, onClose, topic = null }) => {
     setUserTimezone(Intl.DateTimeFormat().resolvedOptions().timeZone)
   }, [])
 
-  // Update form values when topic changes
+  // Update form values when session changes
   useEffect(() => {
-    if (topic) {
-      setValue('title', topic.title)
-      setValue('description', topic.description)
-      setValue('speaker', topic.user_name || 'TBD')
-      setValue('date', '')
-      setValue('calendar_link', '')
-    } else {
-      // Reset form for custom session
-      setValue('title', '')
-      setValue('description', '')
-      setValue('speaker', '')
-      setValue('date', '')
-      setValue('calendar_link', '')
+    if (session) {
+      setValue('title', session.title)
+      setValue('description', session.description)
+      setValue('speaker', session.speaker)
+      // Convert UTC date to local datetime-local input value
+      const localDate = new Date(session.date)
+      const localDateString = new Date(localDate.getTime() - localDate.getTimezoneOffset() * 60000)
+        .toISOString()
+        .slice(0, 16)
+      setValue('date', localDateString)
+      setValue('calendar_link', session.calendar_link)
     }
-  }, [topic, setValue])
+  }, [session, setValue])
 
   const onSubmit = async (data) => {
     try {
@@ -41,13 +39,13 @@ const CreateSessionModal = ({ isOpen, onClose, topic = null }) => {
       const sessionData = {
         ...data,
         date: utcDate.toISOString(),
-        topic_id: topic?.id // Include topic_id if this is being created from a topic
+        id: session.id
       }
-      await createSession(sessionData)
+      await updateSession(sessionData)
       reset()
       onClose()
     } catch (error) {
-      console.error('Error creating session:', error)
+      console.error('Error updating session:', error)
     }
   }
 
@@ -75,7 +73,7 @@ const CreateSessionModal = ({ isOpen, onClose, topic = null }) => {
               <div className="p-6">
                 <div className="flex items-center justify-between mb-6">
                   <h2 className="text-2xl font-bold text-dark-900">
-                    {topic ? 'Create Session from Topic' : 'Create Custom Session'}
+                    Edit Session
                   </h2>
                   <button
                     type="button"
@@ -171,7 +169,7 @@ const CreateSessionModal = ({ isOpen, onClose, topic = null }) => {
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                   >
-                    Create Session
+                    Update Session
                   </motion.button>
                 </form>
               </div>
@@ -183,4 +181,4 @@ const CreateSessionModal = ({ isOpen, onClose, topic = null }) => {
   )
 }
 
-export default CreateSessionModal 
+export default EditSessionModal 

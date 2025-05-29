@@ -379,6 +379,28 @@ export function SessionProvider({ children }) {
     await loadTopics()
   }
 
+  const updateSession = async (sessionData) => {
+    try {
+      const { error } = await supabase
+        .from('sessions')
+        .update({
+          title: sessionData.title,
+          description: sessionData.description,
+          speaker: sessionData.speaker,
+          date: sessionData.date,
+          calendar_link: sessionData.calendar_link
+        })
+        .eq('id', sessionData.id)
+
+      if (error) throw error
+      
+      await loadSessions()
+    } catch (error) {
+      console.error('Error updating session:', error)
+      throw error
+    }
+  }
+
   const value = {
     upcoming,
     past,
@@ -391,6 +413,7 @@ export function SessionProvider({ children }) {
     voteForTopic,
     submitTopic,
     createSession,
+    updateSession,
     updateTopic,
     deleteTopic,
     submitVolunteer

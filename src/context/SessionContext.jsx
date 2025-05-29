@@ -271,18 +271,35 @@ export function SessionProvider({ children }) {
       return false
     }
 
-    const { error } = await supabase
-      .from('topics')
-      .delete()
-      .eq('id', topicId)
+    try {
+      // First delete all votes associated with this topic
+      const { error: votesError } = await supabase
+        .from('votes')
+        .delete()
+        .eq('topic_id', topicId)
 
-    if (error) {
-      console.error('Error deleting topic:', error)
+      if (votesError) {
+        console.error('Error deleting votes:', votesError)
+        return false
+      }
+
+      // Then delete the topic
+      const { error: topicError } = await supabase
+        .from('topics')
+        .delete()
+        .eq('id', topicId)
+
+      if (topicError) {
+        console.error('Error deleting topic:', topicError)
+        return false
+      }
+
+      await loadTopics()
+      return true
+    } catch (error) {
+      console.error('Error in deleteTopic:', error)
       return false
     }
-
-    await loadTopics()
-    return true
   }
 
   const submitTopic = async (newTopic) => {

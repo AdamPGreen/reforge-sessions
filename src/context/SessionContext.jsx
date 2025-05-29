@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect } from 'react'
+import { createContext, useContext, useState, useEffect, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
 import useLocalStorage from 'use-local-storage'
 
@@ -17,124 +17,13 @@ export function SessionProvider({ children }) {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState(null)
 
-  useEffect(() => {
-    let mounted = true;
-
-    console.log('[SessionContext] Initializing context:', {
-      timestamp: Date.now(),
-      path: window.location.pathname,
-      stack: new Error().stack
-    })
-
-    const checkAdmin = async () => {
-      if (!mounted) return;
-      
-      try {
-        const { data: { user }, error } = await supabase.auth.getUser()
-        if (error) {
-          console.error('[SessionContext] Error checking admin status:', error)
-          return
-        }
-
-        if (!user) {
-          setIsAdmin(false)
-          return
-        }
-
-        // Check if user is in admin_users table
-        const { data: adminData, error: adminError } = await supabase
-          .from('admin_users')
-          .select('id')
-          .eq('user_id', user.id)
-          .single()
-
-        if (adminError && adminError.code !== 'PGRST116') { // PGRST116 is "no rows returned"
-          console.error('[SessionContext] Error checking admin_users:', adminError)
-          return
-        }
-
-        const adminStatus = !!adminData
-        console.log('[SessionContext] Admin check:', {
-          userEmail: user?.email,
-          isAdmin: adminStatus,
-          timestamp: Date.now(),
-          stack: new Error().stack
-        })
-        setIsAdmin(adminStatus)
-      } catch (err) {
-        console.error('[SessionContext] Unexpected error during admin check:', err)
-      }
-    }
-
-    const loadUserVotes = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
-
-      try {
-        const { data: votes, error } = await supabase
-          .from('votes')
-          .select('topic_id')
-          .eq('user_id', user.id)
-
-        if (error) {
-          console.error('[SessionContext] Error loading user votes:', error)
-          return
-        }
-
-        // Convert array of vote objects to object with topic_ids as keys
-        const votesMap = votes.reduce((acc, vote) => {
-          acc[vote.topic_id] = true
-          return acc
-        }, {})
-
-        setVotes(votesMap)
-      } catch (err) {
-        console.error('[SessionContext] Unexpected error loading user votes:', err)
-      }
-    }
-    
-    const initialize = async () => {
-      if (!mounted) return;
-      
-      try {
-        setIsLoading(true)
-        setError(null)
-        
-        await Promise.all([
-          checkAdmin(),
-          loadSessions(),
-          loadTopics(),
-          loadUserVotes()
-        ])
-        
-        console.log('[SessionContext] Initialization complete:', {
-          timestamp: Date.now(),
-          stack: new Error().stack
-        })
-      } catch (err) {
-        console.error('[SessionContext] Error during initialization:', err)
-        setError(err)
-      } finally {
-        if (mounted) {
-          setIsLoading(false)
-        }
-      }
-    }
-    
-    initialize()
-
-    return () => {
-      mounted = false
-    }
-  }, [])
-
-  const loadSessions = async () => {
+  const loadSessions = useCallback(async () => {
     console.log('[SessionContext] Loading sessions:', {
       timestamp: Date.now(),
       stack: new Error().stack
     })
     try {
-      const { data: sessions, error } = await supabase
+      const { data, error } = await supabase
         .from('sessions')
         .select('*')
         .order('date', { ascending: true })
@@ -144,29 +33,28 @@ export function SessionProvider({ children }) {
         throw error
       }
 
-      if (sessions) {
+      if (data) {
+        // Split sessions into upcoming and past
         const now = new Date()
-        const upcomingSessions = sessions.filter(s => new Date(s.date) > now)
-        const pastSessions = sessions.filter(s => new Date(s.date) <= now)
-        
+        const upcoming = data.filter(session => new Date(session.date) > now)
+        const past = data.filter(session => new Date(session.date) <= now)
+
         console.log('[SessionContext] Sessions loaded:', {
-          total: sessions.length,
-          upcoming: upcomingSessions.length,
-          past: pastSessions.length,
+          upcoming: upcoming.length,
+          past: past.length,
           timestamp: Date.now(),
           stack: new Error().stack
         })
-        
-        setUpcoming(upcomingSessions)
-        setPast(pastSessions)
+        setUpcoming(upcoming)
+        setPast(past)
       }
     } catch (err) {
       console.error('[SessionContext] Unexpected error loading sessions:', err)
       throw err
     }
-  }
+  }, [])
 
-  const loadTopics = async () => {
+  const loadTopics = useCallback(async () => {
     console.log('[SessionContext] Loading topics:', {
       timestamp: Date.now(),
       stack: new Error().stack
@@ -203,7 +91,85 @@ export function SessionProvider({ children }) {
       console.error('[SessionContext] Unexpected error loading topics:', err)
       throw err
     }
-  }
+  }, [])
+
+  const loadUserVotes = useCallback(async () => {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+
+    try {
+      const { data: votes, error } = await supabase
+        .from('votes')
+        .select('topic_id')
+        .eq('user_id', user.id)
+
+      if (error) {
+        console.error('[SessionContext] Error loading user votes:', error)
+        return
+      }
+
+      // Convert array of vote objects to object with topic_ids as keys
+      const votesMap = votes.reduce((acc, vote) => {
+        acc[vote.topic_id] = true
+        return acc
+      }, {})
+
+      setVotes(votesMap)
+    } catch (err) {
+      console.error('[SessionContext] Unexpected error loading user votes:', err)
+    }
+  }, [setVotes])
+
+  useEffect(() => {
+    let mounted = true;
+
+    console.log('[SessionContext] Initializing context:', {
+      timestamp: Date.now(),
+      path: window.location.pathname,
+      stack: new Error().stack
+    })
+
+    const initialize = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) return
+
+        // Check if user is admin
+        const { data: adminData } = await supabase
+          .from('admin_users')
+          .select('*')
+          .eq('user_id', user.id)
+          .single()
+
+        if (mounted) {
+          setIsAdmin(!!adminData)
+        }
+
+        // Load initial data
+        await Promise.all([
+          loadSessions(),
+          loadTopics(),
+          loadUserVotes()
+        ])
+
+        if (mounted) {
+          setIsLoading(false)
+        }
+      } catch (err) {
+        console.error('[SessionContext] Error initializing:', err)
+        if (mounted) {
+          setError(err)
+          setIsLoading(false)
+        }
+      }
+    }
+
+    initialize()
+
+    return () => {
+      mounted = false
+    }
+  }, [loadSessions, loadTopics, loadUserVotes])
 
   const createSession = async (sessionData) => {
     try {
@@ -327,8 +293,7 @@ export function SessionProvider({ children }) {
           ...newTopic,
           user_id: user.id,
           user_email: user.email,
-          user_name: user.user_metadata?.full_name || user.email,
-          votes: 0
+          user_name: user.user_metadata?.full_name || user.email
         }])
 
       if (error) {
@@ -341,42 +306,6 @@ export function SessionProvider({ children }) {
       console.error('[SessionContext] Unexpected error submitting topic:', err)
       throw err
     }
-  }
-
-  const submitVolunteer = async (volunteerData) => {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
-
-    // First create the volunteer entry
-    const { error: volunteerError } = await supabase
-      .from('volunteers')
-      .insert([{ 
-        speaker: volunteerData.speaker,
-        title: volunteerData.title,
-        description: volunteerData.description,
-        calendar_link: volunteerData.calendar_link,
-        user_id: user.id,
-        is_external_expert: volunteerData.isExternalExpert || false 
-      }])
-
-    if (volunteerError) throw volunteerError
-
-    // Then create a corresponding topic for voting
-    const { error: topicError } = await supabase
-      .from('topics')
-      .insert([{
-        title: volunteerData.title,
-        description: `${volunteerData.description}\n\nSpeaker: ${volunteerData.speaker}${volunteerData.isExternalExpert ? ' (External Expert)' : ''}`,
-        user_id: user.id,
-        user_email: user.email,
-        user_name: user.user_metadata?.full_name || user.email,
-        votes: 0
-      }])
-
-    if (topicError) throw topicError
-
-    // Reload topics to show the new entry
-    await loadTopics()
   }
 
   const updateSession = async (sessionData) => {
@@ -415,8 +344,7 @@ export function SessionProvider({ children }) {
     createSession,
     updateSession,
     updateTopic,
-    deleteTopic,
-    submitVolunteer
+    deleteTopic
   }
 
   return (

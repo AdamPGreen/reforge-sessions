@@ -137,6 +137,7 @@ const EditSessionModal = ({ isOpen, onClose, session }) => {
                     <input
                       id="date"
                       type="datetime-local"
+                      step="900"
                       {...register('date', { required: 'Date is required' })}
                       className="w-full px-4 py-2 rounded-lg border border-light-300 focus:outline-none focus:ring-2 focus:ring-primary-500"
                     />
